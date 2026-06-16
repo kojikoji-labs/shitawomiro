@@ -101,15 +101,15 @@
             <div class="fade-in w-full max-w-sm mx-auto mb-12 border-t border-slate-300 pt-8" style="animation-delay: 2.0s;">
                 <p class="text-xs text-slate-500 font-bold tracking-widest text-center mb-4">RECOMMEND</p>
                 <div class="space-y-3 text-left">
-                    <!-- Amazonアフィリエイトへの導線 -->
-                    <a href="https://www.amazon.co.jp/" target="_blank" rel="noopener noreferrer" class="block bg-white/60 border border-slate-300 p-4 rounded-xl hover:bg-white transition shadow-sm">
-                        <p class="text-sm text-slate-800 font-bold mb-1">もう今日は無理しないで寝よう</p>
-                        <p class="text-xs text-slate-500">おすすめの癒やしグッズを探す (Amazon)</p>
+                    <!-- Amazonアフィリエイトへの導線 1 -->
+                    <a href="https://www.amazon.co.jp/s?k=%E3%82%81%E3%81%90%E3%82%8A%E3%82%BA%E3%83%A0+%E8%92%B8%E6%B0%97%E3%81%A7%E3%83%9B%E3%83%83%E3%83%88%E3%82%A2%E3%82%A4%E3%83%9E%E3%82%B9%E3%82%AF&tag=kojikojiy07-22" target="_blank" rel="noopener noreferrer" class="block bg-white/60 border border-slate-300 p-4 rounded-xl hover:bg-white transition shadow-sm">
+                        <p class="text-sm text-slate-800 font-bold mb-1">とりあえず目を閉じて休もう</p>
+                        <p class="text-xs text-slate-500">めぐりズム 蒸気でホットアイマスク (Amazon)</p>
                     </a>
-                    <!-- カウンセリングサービスへの導線 -->
-                    <a href="#" class="block bg-white/60 border border-slate-300 p-4 rounded-xl hover:bg-white transition shadow-sm">
-                        <p class="text-sm text-slate-800 font-bold mb-1">プロにちょっと愚痴ってみる？</p>
-                        <p class="text-xs text-slate-500">匿名オンラインカウンセリング「〇〇」</p>
+                    <!-- Amazonアフィリエイトへの導線 2 -->
+                    <a href="https://www.amazon.co.jp/s?k=BARTH+%E5%85%A5%E6%B5%B4%E5%89%A4+9%E9%8C%A0&tag=kojikojiy07-22" target="_blank" rel="noopener noreferrer" class="block bg-white/60 border border-slate-300 p-4 rounded-xl hover:bg-white transition shadow-sm">
+                        <p class="text-sm text-slate-800 font-bold mb-1">泥のように眠る準備をしよう</p>
+                        <p class="text-xs text-slate-500">BARTH 重炭酸入浴剤 (Amazon)</p>
                     </a>
                 </div>
             </div>
@@ -126,9 +126,8 @@
 
     <script>
         // --- データベース連携設定 ---
-        // ★ご自身のGoogleスプレッドシート（ウェブに公開 > CSV）のURLに書き換えてください★
-        // ※現在はテスト用のダミーCSV URLを設定しています。
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLbE5BnggnXqIK1EhlIWlzqel7mJHsrgEJgbHiq1EztuH9MPKD_Uq7EIOY7k7Og9Er5Y3nOHxUuKcj/pubhtml;
+        // いただいたGoogleスプレッドシートのURL（CSV出力用に変換済）
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLbE5BnggnXqIK1EhlIWlzqel7mJHsrgEJgbHiq1EztuH9MPKD_Uq7EIOY7k7Og9Er5Y3nOHxUuKcj/pub?output=csv";
 
         let yarukashiDB = [];
         let historyData = [];
@@ -161,7 +160,8 @@
                 download: true,
                 header: true,
                 complete: function(results) {
-                    yarukashiDB = results.data.filter(row => row.category && row.text);
+                    // スプレッドシートの列名に合わせて、text, 人物名, ジャンル が存在する行だけを抽出
+                    yarukashiDB = results.data.filter(row => row.text && row['人物名'] && row['ジャンル']);
                     if(yarukashiDB.length === 0) {
                         alert("データベースの読み込みに失敗したか、データが空です。");
                     }
@@ -199,7 +199,7 @@
                 div.className = 'bg-slate-800 p-4 rounded-xl text-left border border-slate-700';
                 div.innerHTML = `
                     <p class="text-xs text-slate-400 mb-2 truncate">あなた: ${item.userText}</p>
-                    <p class="text-sm text-slate-200 line-clamp-2">偉人: ${item.dbData.text}</p>
+                    <p class="text-sm text-slate-200 line-clamp-2">${item.dbData['人物名']}: ${item.dbData.text}</p>
                 `;
                 historyList.appendChild(div);
             });
@@ -216,8 +216,8 @@
         // --- シェアテキスト生成 ---
         function generateShareText() {
             if (!currentRecord) return "";
-            // SNS投稿用のフォーマット
-            const text = `私のやらかし\n「${currentRecord.userText}」\n\nでも、${currentRecord.dbData.category}は\n「${currentRecord.dbData.text}」\nらしい。\n\n私なんてまだまだ。\n#下には下がいる`;
+            // SNS投稿用のフォーマット（人物名を使用）
+            const text = `私のやらかし\n「${currentRecord.userText}」\n\nでも、${currentRecord.dbData['人物名']}は\n「${currentRecord.dbData.text}」\nらしい。\n\n私なんてまだまだ。\n#下には下がいる`;
             return encodeURIComponent(text);
         }
 
@@ -255,7 +255,9 @@
 
             // ランダムなデータベースのテキストを取得
             const randomData = yarukashiDB[Math.floor(Math.random() * yarukashiDB.length)];
-            dbCategory.textContent = `【 ${randomData.category} 】`;
+            
+            // スプレッドシートの「ジャンル」と「人物名」を組み合わせて見出しを作成
+            dbCategory.textContent = `【 ${randomData['ジャンル']}：${randomData['人物名']} 】`;
             dbStory.textContent = randomData.text;
 
             // 現在のレコードとして保持
