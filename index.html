@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>下には下がいる</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* カスタムアニメーションと基本スタイル */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            transition: background-color 2s ease-in-out; /* 背景色のゆっくりした変化 */
+        }
+        
+        /* 暗闇のテーマ */
+        .theme-dark {
+            background-color: #0f172a; /* slate-900 */
+            color: #f8fafc; /* slate-50 */
+        }
+
+        /* 朝焼けのテーマ（下からオレンジのグラデーション） */
+        .theme-sunrise {
+            background: linear-gradient(to top, #ff9a55 0%, #ffc18f 30%, #fdfbfb 100%);
+            color: #1e293b; /* slate-800 */
+        }
+
+        /* フェードインアニメーション */
+        .fade-in {
+            animation: fadeIn 1.5s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 履歴リストのスクロールバー非表示設定 */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body id="app-body" class="theme-dark min-h-screen flex flex-col items-center justify-center p-6 sm:p-12 relative overflow-x-hidden">
+
+    <!-- ===== 入力画面 (暗闇) ===== -->
+    <div id="input-section" class="w-full max-w-md flex flex-col h-full justify-center transition-opacity duration-1000 z-10 my-auto">
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-2 text-center">下には下がいる</h1>
+        <p class="text-slate-400 text-sm mb-12 text-center">あなたの「やらかし」を吐き出してください。</p>
+
+        <textarea id="user-input" rows="4" class="w-full bg-slate-800 text-slate-100 border border-slate-700 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-slate-500 resize-none shadow-inner mb-6 placeholder-slate-500" placeholder="例：仕事で取り返しのつかないミスをした。完全に終わった..."></textarea>
+
+        <button id="submit-btn" class="w-full bg-slate-100 text-slate-900 font-bold py-4 px-6 rounded-2xl hover:bg-white transition duration-300 shadow-[0_0_15px_rgba(255,255,255,0.1)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed">
+            下を見る
+        </button>
+
+        <!-- 履歴表示エリア (入力画面の下部) -->
+        <div class="w-full border-t border-slate-800 pt-8 pb-4 mt-12">
+            <h2 class="text-xs text-slate-600 tracking-widest text-center mb-6">過去の傷跡</h2>
+            <div id="history-list" class="space-y-4">
+                <!-- 履歴がここに追加される -->
+            </div>
+            <p id="empty-history" class="text-xs text-slate-700 text-center">まだ履歴はありません</p>
+        </div>
+    </div>
+
+
+    <!-- ===== 結果画面 (朝焼け) ===== -->
+    <div id="result-section" class="w-full max-w-md flex flex-col h-full justify-center hidden opacity-0 z-10 my-auto pb-12">
+        <div class="text-center">
+            <p class="text-sm font-bold text-slate-500 mb-4 tracking-widest">あなたのやらかし</p>
+            <!-- ユーザーの入力テキスト -->
+            <p id="display-user-text" class="text-slate-600 italic mb-12 line-clamp-3">...</p>
+
+            <div class="fade-in" style="animation-delay: 0.5s;">
+                <p id="db-category" class="text-xs font-bold text-orange-600 tracking-widest mb-3">【 〇〇のやらかし 】</p>
+                <!-- 偉人のやらかしテキスト -->
+                <h2 id="db-story" class="text-xl md:text-2xl text-slate-800 font-bold leading-relaxed mb-12">
+                    <!-- Javascriptで挿入される -->
+                </h2>
+            </div>
+            
+            <div class="fade-in flex flex-col sm:flex-row gap-4 justify-center items-center mb-12" style="animation-delay: 1.5s;">
+                <!-- Xシェアボタン -->
+                <button id="share-x-btn" class="flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-full text-sm font-bold shadow-lg hover:bg-slate-800 transition w-full sm:w-auto">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 22.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+                    Xで共有
+                </button>
+                <!-- Threadsシェアボタン -->
+                <button id="share-threads-btn" class="flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-full text-sm font-bold shadow-lg hover:bg-slate-800 transition w-full sm:w-auto">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 192 192" aria-hidden="true"><path d="M141.537 88.9883C140.71 88.5919 139.87 88.2104 139.019 87.8451C137.537 60.5382 122.616 44.905 97.5619 44.745C97.4484 44.7443 97.3355 44.7443 97.222 44.7443C82.2364 44.7443 69.7731 51.1409 62.102 62.7807L75.881 72.2328C81.6116 63.5383 90.6052 61.6848 97.2286 61.6848C97.3051 61.6848 97.3819 61.6848 97.4576 61.6855C105.707 61.7381 111.932 64.1366 115.961 68.814C118.893 72.2193 120.854 76.925 121.825 82.8638C114.511 81.6207 106.601 81.2385 98.145 81.7233C74.3247 83.0954 59.0111 96.9879 60.0396 116.292C60.5615 126.084 65.4397 134.508 73.775 140.011C80.8224 144.663 89.899 146.938 99.3323 146.423C111.79 145.74 121.563 140.987 128.381 132.296C133.559 125.696 136.834 117.143 138.28 106.366C144.217 109.949 148.617 114.664 151.047 120.332C155.179 129.967 155.42 145.8 142.501 158.708C131.182 170.016 117.576 174.908 97.0135 175.059C74.2042 174.89 56.9538 167.575 45.7381 153.317C35.2355 139.966 29.8077 120.682 29.6052 96C29.8077 71.3178 35.2355 52.0336 45.7381 38.6827C56.9538 24.4249 74.2039 17.11 97.0132 16.9405C119.988 17.1113 137.539 24.4614 149.184 38.788C154.894 45.8136 159.199 54.6488 162.037 64.9503L178.184 60.6422C174.744 47.9622 169.331 37.0357 161.965 27.974C147.036 9.60668 125.202 0.195148 97.0695 0C64.3908 0.196052 40.8801 9.8476 25.121 29.8096C11.984 46.4389 5.46005 68.3651 5.00002 96C5.46005 123.635 11.984 145.561 25.121 162.191C40.8801 182.152 64.3908 191.804 97.0695 192C126.278 191.832 144.57 184.286 158.544 170.323C176.434 152.446 173.805 127.355 166.457 110.366C162.016 100.106 153.308 92.934 141.537 88.9883ZM98.4405 129.507C88.0005 130.095 77.1544 125.409 76.6196 115.372C76.2232 107.93 81.9158 99.626 99.0812 98.0476C101.049 97.8658 102.992 97.7365 104.932 97.649C105.872 97.6053 106.814 97.573 107.754 97.5532C108.647 106.828 105.158 128.857 98.4405 129.507Z"></path></svg>
+                    Threadsで共有
+                </button>
+            </div>
+
+            <!-- RECOMMEND (マネタイズ導線) -->
+            <div class="fade-in w-full max-w-sm mx-auto mb-12 border-t border-slate-300 pt-8" style="animation-delay: 2.0s;">
+                <p class="text-xs text-slate-500 font-bold tracking-widest text-center mb-4">RECOMMEND</p>
+                <div class="space-y-3 text-left">
+                    <!-- Amazonアフィリエイトへの導線 -->
+                    <a href="https://www.amazon.co.jp/" target="_blank" rel="noopener noreferrer" class="block bg-white/60 border border-slate-300 p-4 rounded-xl hover:bg-white transition shadow-sm">
+                        <p class="text-sm text-slate-800 font-bold mb-1">もう今日は無理しないで寝よう</p>
+                        <p class="text-xs text-slate-500">おすすめの癒やしグッズを探す (Amazon)</p>
+                    </a>
+                    <!-- カウンセリングサービスへの導線 -->
+                    <a href="#" class="block bg-white/60 border border-slate-300 p-4 rounded-xl hover:bg-white transition shadow-sm">
+                        <p class="text-sm text-slate-800 font-bold mb-1">プロにちょっと愚痴ってみる？</p>
+                        <p class="text-xs text-slate-500">匿名オンラインカウンセリング「〇〇」</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- リセットボタン -->
+            <button id="reset-btn" class="fade-in w-full bg-slate-900 text-white font-bold py-4 px-6 rounded-2xl hover:bg-slate-800 transition duration-300 shadow-xl focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-[#ff9a55]" style="animation-delay: 2.5s;">
+                もう一度、暗闇に戻る
+            </button>
+        </div>
+    </div>
+
+    <!-- CSVパーサーライブラリ (PapaParse) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <script>
+        // --- データベース連携設定 ---
+        // ★ご自身のGoogleスプレッドシート（ウェブに公開 > CSV）のURLに書き換えてください★
+        // ※現在はテスト用のダミーCSV URLを設定しています。
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5N8yHn0V3C02V_n11hR5U8aK6-mE9g_Fw0Q8r-j5qP86s17Z38o9y_1W1-Q6A3bB0_pU8-L7Yv9L/pub?output=csv";
+
+        let yarukashiDB = [];
+        let historyData = [];
+        let currentRecord = null; // 現在表示中のデータ
+
+        // --- DOM要素の取得 ---
+        const appBody = document.getElementById('app-body');
+        const inputSection = document.getElementById('input-section');
+        const resultSection = document.getElementById('result-section');
+        
+        const userInput = document.getElementById('user-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        
+        const displayUserText = document.getElementById('display-user-text');
+        const dbCategory = document.getElementById('db-category');
+        const dbStory = document.getElementById('db-story');
+
+        const historyList = document.getElementById('history-list');
+        const emptyHistoryText = document.getElementById('empty-history');
+
+        // --- データの初期読み込み (スプレッドシートから) ---
+        function loadDatabase() {
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = "データベースを読み込み中...";
+            submitBtn.disabled = true;
+            submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+
+            Papa.parse(SHEET_CSV_URL, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    yarukashiDB = results.data.filter(row => row.category && row.text);
+                    if(yarukashiDB.length === 0) {
+                        alert("データベースの読み込みに失敗したか、データが空です。");
+                    }
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                },
+                error: function(err) {
+                    console.error("CSV読み込みエラー:", err);
+                    alert("データベースの読み込みに失敗しました。URLを確認してください。");
+                    submitBtn.textContent = "読み込みエラー";
+                }
+            });
+        }
+
+        // --- 履歴の読み込みと表示 ---
+        function loadHistory() {
+            const stored = localStorage.getItem('yarukashiHistory');
+            if (stored) {
+                historyData = JSON.parse(stored);
+                updateHistoryList();
+            }
+        }
+
+        function updateHistoryList() {
+            historyList.innerHTML = '';
+            if (historyData.length === 0) {
+                emptyHistoryText.style.display = 'block';
+                return;
+            }
+            
+            emptyHistoryText.style.display = 'none';
+            historyData.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'bg-slate-800 p-4 rounded-xl text-left border border-slate-700';
+                div.innerHTML = `
+                    <p class="text-xs text-slate-400 mb-2 truncate">あなた: ${item.userText}</p>
+                    <p class="text-sm text-slate-200 line-clamp-2">偉人: ${item.dbData.text}</p>
+                `;
+                historyList.appendChild(div);
+            });
+        }
+
+        function saveToHistory(record) {
+            historyData.unshift(record); // 先頭に追加
+            // 最大20件程度に制限（ストレージ溢れ防止）
+            if(historyData.length > 20) historyData.pop();
+            localStorage.setItem('yarukashiHistory', JSON.stringify(historyData));
+            updateHistoryList();
+        }
+
+        // --- シェアテキスト生成 ---
+        function generateShareText() {
+            if (!currentRecord) return "";
+            // SNS投稿用のフォーマット
+            const text = `私のやらかし\n「${currentRecord.userText}」\n\nでも、${currentRecord.dbData.category}は\n「${currentRecord.dbData.text}」\nらしい。\n\n私なんてまだまだ。\n#下には下がいる`;
+            return encodeURIComponent(text);
+        }
+
+        // --- イベントリスナー ---
+
+        // X(Twitter)シェア
+        document.getElementById('share-x-btn').addEventListener('click', () => {
+            const shareText = generateShareText();
+            const xUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
+            window.open(xUrl, '_blank');
+        });
+
+        // Threadsシェア
+        document.getElementById('share-threads-btn').addEventListener('click', () => {
+            const shareText = generateShareText();
+            const threadsUrl = `https://www.threads.net/intent/post?text=${shareText}`;
+            window.open(threadsUrl, '_blank');
+        });
+
+        // 「下を見る」ボタンクリック
+        submitBtn.addEventListener('click', () => {
+            const text = userInput.value.trim();
+            if (!text) {
+                alert("やらかした内容を入力してください。");
+                return;
+            }
+
+            if (yarukashiDB.length === 0) {
+                 alert("データベースの準備ができていません。リロードするか少しお待ち下さい。");
+                 return;
+            }
+
+            // ユーザー入力を表示にセット
+            displayUserText.textContent = `「${text}」`;
+
+            // ランダムなデータベースのテキストを取得
+            const randomData = yarukashiDB[Math.floor(Math.random() * yarukashiDB.length)];
+            dbCategory.textContent = `【 ${randomData.category} 】`;
+            dbStory.textContent = randomData.text;
+
+            // 現在のレコードとして保持
+            currentRecord = { userText: text, dbData: randomData };
+
+            // 画面の切り替え処理 (フェードアウト -> テーマ変更 -> フェードイン)
+            inputSection.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                inputSection.classList.add('hidden');
+                
+                // テーマを「朝焼け」に変更
+                appBody.classList.remove('theme-dark');
+                appBody.classList.add('theme-sunrise');
+                
+                resultSection.classList.remove('hidden');
+                // 少し待ってから表示エリアのopacityを上げる
+                setTimeout(() => {
+                    resultSection.classList.remove('opacity-0');
+                }, 50);
+            }, 1000); // inputSectionのopacity遷移時間と合わせる
+            
+            // スクロールを一番上に戻す
+            setTimeout(() => { window.scrollTo(0, 0); }, 100);
+        });
+
+        // 「もう一度、暗闇に戻る」ボタンクリック
+        resetBtn.addEventListener('click', () => {
+            // 履歴に保存
+            if(currentRecord) {
+                saveToHistory(currentRecord);
+                currentRecord = null;
+            }
+
+            // UIをリセットして最初の画面に戻す
+            resultSection.classList.add('opacity-0');
+
+            setTimeout(() => {
+                resultSection.classList.add('hidden');
+                
+                // テーマを「暗闇」に戻す
+                appBody.classList.remove('theme-sunrise');
+                appBody.classList.add('theme-dark');
+                
+                userInput.value = ''; // 入力をクリア
+                
+                inputSection.classList.remove('hidden');
+                setTimeout(() => {
+                    inputSection.classList.remove('opacity-0');
+                }, 50);
+            }, 1000);
+            
+            setTimeout(() => { window.scrollTo(0, 0); }, 100);
+        });
+
+        // アプリケーション初期化
+        loadDatabase();
+        loadHistory();
+    </script>
+</body>
+</html>
