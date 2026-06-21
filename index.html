@@ -1,321 +1,2656 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>下には下がいる</title>
-    <!-- Tailwind CSS (CDN) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f6f1e8" />
+    <title>税金回収カウンター</title>
+
+    <!-- ==========================================
+      【外部ライブラリ】html5-qrcode (カメラバーコードスキャナー)
+    ========================================== -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <!-- ==========================================
+      【アクセス解析】Google Analytics (GA4) 高度連携
+    ========================================== -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HZE3814T60"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-HZE3814T60');
+
+      function logAppEvent(eventName, params = {}) {
+        try {
+          gtag('event', eventName, params);
+        } catch (e) {
+          console.error("GA4 Event Log Error:", e);
+        }
+      }
+    </script>
+
+    <!-- ==========================================
+      【広告】Google AdSense 審査・自動広告配信タグ
+    ========================================== -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5682898371122354"
+     crossorigin="anonymous"></script>
+
+    <link rel="icon" type="image/png" href="./icon.png" />
+    <link rel="apple-touch-icon" href="./icon.png" />
+
     <style>
-        /* カスタムアニメーションと基本スタイル */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            transition: background-color 2s ease-in-out; /* 背景色のゆっくりした変化 */
-        }
-        
-        /* 暗闇のテーマ */
-        .theme-dark {
-            background-color: #0f172a; /* slate-900 */
-            color: #f8fafc; /* slate-50 */
-        }
+      /* --- デザインシステム & CSS変数定義 --- */
+      :root {
+        --bg-app: #f6f1e8;
+        --bg-card: #ffffff;
+        --text-primary: #2c2520;
+        --text-secondary: #70635a;
+        --accent: #2d6a4f;
+        --accent-hover: #1b4332;
+        --accent-bg: #e8f5e9;
+        --border-color: #e0d5c1;
+        --gauge-track: #e5dec9;
+        --font-main: system-ui, -apple-system, sans-serif;
+        --radius: 12px;
+        --shadow: 0 4px 12px rgba(44, 37, 32, 0.05);
+        --transition: all 0.25s ease;
+      }
 
-        /* 朝焼けのテーマ（下からオレンジのグラデーション） */
-        .theme-sunrise {
-            background: linear-gradient(to top, #ff9a55 0%, #ffc18f 30%, #fdfbfb 100%);
-            color: #1e293b; /* slate-800 */
-        }
+      /* ダークモード */
+      [data-theme="dark"] {
+        --bg-app: #1a1613;
+        --bg-card: #26211d;
+        --text-primary: #f6f1e8;
+        --text-secondary: #aba096;
+        --accent: #52b788;
+        --accent-hover: #74c69d;
+        --accent-bg: #2d4a3e;
+        --border-color: #3d352e;
+        --gauge-track: #3d352e;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      }
 
-        /* フェードインアニメーション */
-        .fade-in {
-            animation: fadeIn 1.5s ease-in-out forwards;
-        }
+      /* 明細ベース */
+      [data-style="statement"] {
+        --bg-app: #f4f4f5;
+        --bg-card: #ffffff;
+        --text-primary: #18181b;
+        --text-secondary: #71717a;
+        --accent: #0f172a;
+        --accent-hover: #1e293b;
+        --accent-bg: #f1f5f9;
+        --border-color: #e4e4e7;
+        --gauge-track: #e4e4e7;
+        --font-main: "Courier New", Courier, monospace, system-ui;
+        --radius: 0px;
+        --shadow: none;
+        border: 1px solid var(--border-color);
+      }
+      [data-style="statement"][data-theme="dark"] {
+        --bg-app: #09090b;
+        --bg-card: #18181b;
+        --text-primary: #fafafa;
+        --text-secondary: #a1a1aa;
+        --accent: #f8fafc;
+        --accent-hover: #e2e8f0;
+        --accent-bg: #1e293b;
+        --border-color: #27272a;
+        --gauge-track: #27272a;
+      }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+      /* 大人のミニゲーム */
+      [data-style="game"] {
+        --bg-app: #0f172a;
+        --bg-card: #1e293b;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --accent: #38bdf8;
+        --accent-hover: #7dd3fc;
+        --accent-bg: #0c4a6e;
+        --border-color: #334155;
+        --gauge-track: #334155;
+        --font-main: 'Trebuchet MS', system-ui;
+        --radius: 16px;
+        --shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+      }
+      [data-style="game"][data-theme="dark"] {
+        --bg-app: #020617;
+        --bg-card: #0f172a;
+        --accent: #f43f5e;
+        --accent-hover: #fb7185;
+        --accent-bg: #4c0519;
+        --gauge-track: #1e293b;
+        --shadow: 0 0 20px rgba(244, 63, 94, 0.3);
+      }
 
-        /* 履歴リストのスクロールバー非表示設定 */
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+      /* --- 全体レイアウト --- */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font-main);
+        background-color: var(--bg-app);
+        color: var(--text-primary);
+        transition: var(--transition);
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      .app-shell {
+        width: 100%;
+        max-width: 480px;
+        display: flex;
+        flex-direction: column;
+        padding: 16px 16px 160px 16px;
+        position: relative;
+      }
+
+      /* ヘッダー */
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0 16px 0;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 16px;
+      }
+
+      .eyebrow {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 2px;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      h1 img {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        object-fit: cover;
+      }
+
+      /* ボタン */
+      .icon-button {
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.2rem;
+        cursor: pointer;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        transition: var(--transition);
+      }
+
+      .icon-button:active {
+        transform: scale(0.95);
+      }
+
+      .ghost-button {
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition);
+      }
+
+      .primary-button {
+        background-color: var(--accent);
+        color: var(--bg-card);
+        border: none;
+        padding: 14px;
+        border-radius: var(--radius);
+        font-weight: bold;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: var(--transition);
+        width: 100%;
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .primary-button:hover {
+        background-color: var(--accent-hover);
+      }
+
+      /* シェア・招待ボタン */
+      .share-button {
+        background-color: #1da1f2;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: var(--radius);
+        font-weight: bold;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+      }
+
+      .share-button:hover {
+        background-color: #1a91da;
+      }
+
+      .app-invite-button {
+        background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: var(--radius);
+        font-weight: bold;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        box-shadow: var(--shadow);
+        margin-top: 4px;
+      }
+      .app-invite-button:hover {
+        filter: brightness(1.1);
+      }
+
+      .x-follow-button {
+        background-color: #000000;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: var(--radius);
+        font-weight: bold;
+        font-size: 0.85rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: var(--transition);
+        width: 100%;
+      }
+
+      .x-follow-button:hover {
+        background-color: #222222;
+      }
+
+      /* Amazonボタン */
+      .amazon-btn {
+        background-color: #ff9900;
+        color: #111111;
+        border: 1px solid #a88734;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: var(--transition);
+        white-space: nowrap;
+      }
+
+      .amazon-btn:hover {
+        background-color: #f7dfa5;
+        border-color: #a88734;
+      }
+
+      /* 読書グッズ用ミニボタン */
+      .goods-buy-btn {
+        background-color: #ff9900;
+        color: #111111;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        text-decoration: none;
+        text-align: center;
+        border: 1px solid #a88734;
+      }
+
+      /* 【超重要】ビュー強制制御スタイル */
+      .view {
+        display: none !important;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .view.is-active {
+        display: block !important;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* カレンダー切り替え */
+      .month-switcher {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: var(--bg-card);
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        margin-bottom: 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .month-switcher h2 {
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+
+      /* 主役化された回収完了ゲージパネル */
+      .hero-panel {
+        background-color: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 24px;
+        border: 2px solid var(--accent);
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        transition: var(--transition);
+        position: relative;
+      }
+
+      .hero-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+      }
+
+      .hero-copy .label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        font-weight: bold;
+      }
+
+      .hero-copy strong {
+        font-size: 2.5rem;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        color: var(--accent);
+        line-height: 1.2;
+      }
+
+      .hero-copy span {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        background-color: var(--accent-bg);
+        color: var(--accent);
+        padding: 6px 12px;
+        border-radius: 99px;
+        display: inline-block;
+        margin: 8px auto 0 auto;
+        font-weight: bold;
+      }
+
+      /* 生涯回収アワードパネル */
+      .lifetime-panel {
+        background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
+        color: #ffffff;
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      [data-theme="dark"] .lifetime-panel {
+        background: linear-gradient(135deg, #132a13 0%, #2d4a3e 100%);
+      }
+      .lifetime-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .lifetime-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        opacity: 0.85;
+      }
+      .lifetime-value {
+        font-size: 1.5rem;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+      }
+      .lifetime-badge {
+        background-color: rgba(255, 255, 255, 0.15);
+        padding: 4px 10px;
+        border-radius: 99px;
+        font-size: 0.75rem;
+        font-weight: bold;
+      }
+
+      /* ゲージ */
+      .gauge-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .gauge-track {
+        height: 18px;
+        background-color: var(--gauge-track);
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .gauge-fill {
+        height: 100%;
+        background-color: var(--accent);
+        width: 0%;
+        transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        border-radius: 999px;
+      }
+
+      .gauge-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        font-weight: bold;
+      }
+
+      /* ログインスタンプカード */
+      .omikuji-card {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: relative;
+        overflow: hidden;
+      }
+      .omikuji-title {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px dashed var(--border-color);
+        padding-bottom: 8px;
+      }
+      .omikuji-btn {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 99px;
+        font-weight: bold;
+        font-size: 0.85rem;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(45, 106, 79, 0.2);
+        transition: var(--transition);
+        margin: 4px auto;
+        display: inline-block;
+      }
+      .omikuji-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(45, 106, 79, 0.3);
+      }
+
+      /* 今日のおすすめ本エリア */
+      .omikuji-result-box {
+        display: none;
+        animation: scaleIn 0.3s ease;
+        padding: 12px;
+        border-radius: 8px;
+        background-color: var(--bg-app);
+        border: 1px dashed var(--border-color);
+        text-align: left;
+      }
+      @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      .omikuji-fortune {
+        font-size: 1.1rem;
+        font-weight: 900;
+        color: var(--accent);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      
+      .recommend-detail-layout {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .recommend-cover-wrapper {
+        width: 60px;
+        height: 82px;
+        border-radius: 4px;
+        background-color: var(--gauge-track);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        cursor: pointer;
+        transition: var(--transition);
+      }
+      .recommend-cover-wrapper:hover {
+        transform: scale(1.03);
+      }
+      .recommend-cover-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .recommend-info-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+      .recommend-book-title {
+        font-size: 0.85rem;
+        font-weight: bold;
+        line-height: 1.3;
+        color: var(--text-primary);
+      }
+      .recommend-book-author {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+      }
+      .omikuji-desc {
+        font-size: 0.75rem;
+        color: var(--text-primary);
+        line-height: 1.4;
+        margin-top: 6px;
+      }
+      
+      /* スタンプカレンダーグリッド */
+      .stamp-calendar-container {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 4px;
+      }
+      .stamp-calendar-header {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+      }
+      .stamp-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+      }
+      .stamp-box {
+        aspect-ratio: 1;
+        border-radius: 6px;
+        background-color: var(--bg-app);
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        font-weight: bold;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+      }
+      .stamp-box.is-active {
+        background-color: var(--accent-bg);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .stamp-box.is-active::after {
+        content: "⭐";
+        font-size: 0.55rem;
+        position: absolute;
+        bottom: 1px;
+      }
+      .stamp-box.is-future {
+        opacity: 0.5;
+        cursor: default;
+        pointer-events: none;
+      }
+      .stamp-box:not(.is-future):active {
+        transform: scale(0.92);
+      }
+
+      /* グリッドカード */
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .metric-card {
+        background-color: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 16px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .metric-card span {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .metric-card strong {
+        font-size: 1.2rem;
+        font-weight: 800;
+      }
+
+      /* セクション共通 */
+      .section-block {
+        margin-bottom: 16px;
+      }
+
+      .section-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 12px;
+      }
+
+      .section-heading h3 {
+        font-size: 0.95rem;
+        font-weight: 800;
+      }
+
+      .section-heading span {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      /* 本のリスト */
+      .book-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .book-card {
+        background-color: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 14px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 0px;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .book-main-row {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        width: 100%;
+        padding-bottom: 0px;
+        transition: padding 0.2s ease;
+      }
+
+      .book-cover-wrapper {
+        width: 52px;
+        height: 72px;
+        border-radius: 4px;
+        background-color: var(--gauge-track);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+
+      .book-cover-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .book-cover-placeholder {
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        opacity: 0.7;
+      }
+
+      .book-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .book-title {
+        font-size: 0.9rem;
+        font-weight: bold;
+        line-height: 1.35;
+        word-break: break-all;
+        overflow-wrap: break-word;
+      }
+
+      .book-meta {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        line-height: 1.3;
+      }
+
+      .book-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-end;
+        flex-shrink: 0;
+      }
+
+      /* Amazon文脈レコメンドエリア */
+      .book-monetize-row {
+        height: 0;
+        opacity: 0;
+        visibility: hidden;
+        border-top: 1px dashed transparent;
+        padding-top: 0;
+        margin-top: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        transition: height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease, padding-top 0.3s ease;
+        width: 100%;
+      }
+
+      .book-card.is-read-mode {
+        gap: 10px;
+      }
+      .book-card.is-read-mode .book-main-row {
+        padding-bottom: 4px;
+      }
+      .book-card.is-read-mode .book-monetize-row {
+        height: auto;
+        opacity: 1;
+        visibility: visible;
+        border-top-color: var(--border-color);
+        padding-top: 10px;
+        margin-top: 4px;
+      }
+
+      .monetize-text {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        font-weight: bold;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* 期限バッジ */
+      .badge-urgent {
+        background-color: #fee2e2;
+        color: #ef4444;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 0.65rem;
+        white-space: nowrap;
+      }
+      [data-theme="dark"] .badge-urgent {
+        background-color: #450a0a;
+        color: #fca5a5;
+      }
+
+      .status-button {
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-app);
+        color: var(--text-primary);
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: var(--transition);
+        white-space: nowrap;
+      }
+
+      .status-button.is-read {
+        background-color: var(--accent-bg);
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .delete-button {
+        background: none;
+        border: none;
+        color: #ef4444;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      /* デザインスタイル・ナイトモード切り替え設定欄 */
+      .setting-item-block {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .setting-row-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .style-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        width: 100%;
+      }
+
+      .style-card {
+        background-color: var(--bg-app);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 12px 8px;
+        cursor: pointer;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition: var(--transition);
+      }
+
+      .style-card.is-selected {
+        border-color: var(--accent);
+        background-color: var(--accent-bg);
+        color: var(--accent);
+      }
+
+      .style-card span {
+        font-size: 0.8rem;
+        font-weight: bold;
+      }
+
+      .style-card small {
+        font-size: 0.65rem;
+        color: var(--text-secondary);
+      }
+
+      /* 本棚コントロール */
+      .shelf-controls {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 12px;
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: var(--shadow);
+      }
+
+      .shelf-search-row {
+        position: relative;
+        display: flex;
+        width: 100%;
+      }
+
+      .shelf-search-input {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-app);
+        color: var(--text-primary);
+        outline: none;
+      }
+
+      .shelf-filter-row {
+        display: flex;
+        gap: 6px;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .shelf-sort-select {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-app);
+        color: var(--text-primary);
+        outline: none;
+        max-width: 140px;
+      }
+
+      .filter-tabs {
+        display: flex;
+        background-color: var(--bg-app);
+        border-radius: 8px;
+        padding: 2px;
+        border: 1px solid var(--border-color);
+      }
+
+      .filter-btn {
+        background: none;
+        border: none;
+        padding: 4px 10px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: var(--transition);
+      }
+
+      .filter-btn.is-active {
+        background-color: var(--bg-card);
+        color: var(--accent);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      }
+
+      .history-toggle-container {
+        display: flex;
+        margin-bottom: 12px;
+        width: 100%;
+        background-color: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 4px;
+        border: 1px solid var(--border-color);
+      }
+
+      .history-toggle-btn {
+        flex: 1;
+        background: none;
+        border: none;
+        padding: 10px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-radius: 8px;
+        transition: var(--transition);
+      }
+
+      .history-toggle-btn.is-active {
+        background-color: var(--accent);
+        color: #ffffff;
+      }
+
+      /* 登録フォーム */
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        background-color: var(--bg-card);
+        padding: 20px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow);
+        margin-bottom: 24px;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: var(--text-secondary);
+      }
+
+      input, select {
+        padding: 12px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-app);
+        color: var(--text-primary);
+        font-family: var(--font-main);
+        font-size: 0.95rem;
+        outline: none;
+        transition: var(--transition);
+      }
+
+      input:focus, select:focus {
+        border-color: var(--accent);
+      }
+
+      /* バーコードスキャンエリア */
+      .scanner-trigger-box {
+        background-color: var(--bg-card);
+        border: 2px dashed var(--accent);
+        border-radius: var(--radius);
+        padding: 24px 16px;
+        text-align: center;
+        margin-bottom: 16px;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        box-shadow: var(--shadow);
+      }
+      .scanner-trigger-box:hover {
+        background-color: var(--accent-bg);
+      }
+      .scanner-icon {
+        font-size: 2.2rem;
+      }
+      .scanner-title {
+        font-weight: bold;
+        font-size: 0.95rem;
+        color: var(--accent);
+      }
+      .scanner-subtitle {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      /* カメラスキャンモーダル */
+      .scanner-modal {
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        background-color: rgba(0,0,0,0.85);
+        z-index: 1000;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      .scanner-container {
+        width: 100%;
+        max-width: 400px;
+        background-color: var(--bg-card);
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      .scanner-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+        background-color: var(--bg-app);
+      }
+      .scanner-close-btn {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: var(--text-secondary);
+      }
+      #interactive-scanner {
+        width: 100%;
+        min-height: 280px;
+        background-color: #000;
+      }
+      .scanner-status {
+        padding: 12px;
+        font-size: 0.75rem;
+        text-align: center;
+        color: var(--text-secondary);
+        background-color: var(--bg-app);
+      }
+
+      /* おすすめ読書枠（PR） */
+      .recommended-pr-block {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-top: 16px;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .pr-label {
+        font-size: 0.75rem;
+        color: var(--accent);
+        font-weight: bold;
+        letter-spacing: 0.05em;
+      }
+
+      .pr-link-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .pr-caption {
+        font-size: 0.75rem;
+        font-weight: bold;
+        line-height: 1.4;
+      }
+
+      .pr-image-wrapper {
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        line-height: 0;
+      }
+
+      .pr-image-wrapper img {
+        width: 100%;
+        height: auto;
+      }
+
+      /* 読書グッズ用グリッドレイアウト */
+      .goods-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 8px;
+      }
+      .goods-item-card {
+        background-color: var(--bg-app);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .goods-item-title {
+        font-size: 0.75rem;
+        font-weight: bold;
+        line-height: 1.3;
+      }
+
+      /* 楽天アンカーバナー */
+      .promo-anchor-banner {
+        position: fixed;
+        bottom: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 480px;
+        background-color: var(--bg-card);
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
+      }
+
+      .promo-banner-content {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.3;
+        text-align: center;
+      }
+
+      .promo-close-btn {
+        position: absolute;
+        right: 8px;
+        top: 4px;
+        background: none;
+        border: none;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 4px;
+      }
+
+      /* 毎日開かせるためのリマインダー通知 */
+      .push-popup-banner {
+        background-color: #2c2520;
+        color: #ffffff;
+        border-radius: var(--radius);
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        display: none; /* 期限あり時JSで出現 */
+        align-items: center;
+        gap: 12px;
+        animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: var(--shadow);
+      }
+      @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+      .push-popup-text { flex: 1; font-size: 0.75rem; font-weight: bold; line-height: 1.4; }
+
+      /* ナビゲーション */
+      .tabbar {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 480px;
+        background-color: var(--bg-card);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        height: 70px;
+        padding-bottom: env(safe-area-inset-bottom, 0);
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+        z-index: 100;
+      }
+
+      .tab {
+        flex: 1;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .tab::before { font-size: 1.25rem; margin-bottom: 3px; }
+      .tab[data-tab="dashboard"]::before { content: "📅"; }
+      .tab[data-tab="scan"]::before { content: "➕"; }
+      .tab[data-tab="shelf"]::before { content: "📚"; }
+      .tab[data-tab="settings"]::before { content: "⚙️"; }
+      .tab.is-active { color: var(--accent); }
+
+      /* プライバシーポリシー */
+      .policy-details {
+        background-color: var(--bg-app);
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+      }
+
+      .policy-summary {
+        padding: 14px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        outline: none;
+        list-style: none;
+      }
+
+      .policy-summary::-webkit-details-marker { display: none; }
+      .policy-summary::after { content: "▼"; font-size: 0.75rem; color: var(--text-secondary); transition: transform 0.2s ease; }
+      .policy-details[open] .policy-summary::after { transform: rotate(180deg); }
+
+      .policy-content {
+        padding: 0 14px 14px 14px;
+        font-size: 0.75rem;
+        line-height: 1.5;
+        color: var(--text-secondary);
+        border-top: 1px dashed var(--border-color);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .policy-title { font-weight: bold; color: var(--text-primary); margin-top: 8px; display: block; }
+      
+      /* トースト */
+      .toast {
+        position: fixed;
+        bottom: 85px;
+        left: 50%;
+        transform: translate(-50%, 20px);
+        background-color: var(--text-primary);
+        color: var(--bg-app);
+        padding: 10px 20px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        opacity: 0;
+        visibility: hidden;
+        transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+        z-index: 200;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        white-space: nowrap;
+      }
+
+      .toast.is-show { transform: translate(-50%, 0); opacity: 0.95; visibility: visible; }
     </style>
-</head>
-<body id="app-body" class="theme-dark min-h-screen flex flex-col items-center justify-center p-6 sm:p-12 relative overflow-x-hidden">
-
-    <!-- ===== 入力画面 (暗闇) ===== -->
-    <div id="input-section" class="w-full max-w-md flex flex-col h-full justify-center transition-opacity duration-1000 z-10 my-auto">
-        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-2 text-center">下には下がいる</h1>
-        <p class="text-slate-400 text-sm mb-12 text-center">あなたの「やらかし」を吐き出してください。</p>
-
-        <textarea id="user-input" rows="4" class="w-full bg-slate-800 text-slate-100 border border-slate-700 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-slate-500 resize-none shadow-inner mb-6 placeholder-slate-500" placeholder="例：仕事で取り返しのつかないミスをした。完全に終わった..."></textarea>
-
-        <button id="submit-btn" class="w-full bg-slate-100 text-slate-900 font-bold py-4 px-6 rounded-2xl hover:bg-white transition duration-300 shadow-[0_0_15px_rgba(255,255,255,0.1)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed">
-            下を見る
-        </button>
-
-        <!-- 履歴表示エリア (入力画面の下部) -->
-        <div class="w-full border-t border-slate-800 pt-8 pb-4 mt-12">
-            <h2 class="text-xs text-slate-600 tracking-widest text-center mb-6">過去の傷跡</h2>
-            <div id="history-list" class="space-y-4">
-                <!-- 履歴がここに追加される -->
-            </div>
-            <p id="empty-history" class="text-xs text-slate-700 text-center">まだ履歴はありません</p>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">図書館で静かに取り返し中</p>
+          <h1>
+            <img src="./icon.png" alt="アイコン" onerror="this.style.display='none';">
+            税金回収カウンター
+          </h1>
         </div>
-    </div>
+      </header>
 
+      <!-- ビュー: ダッシュボード（今月） -->
+      <section class="view is-active" id="view-dashboard" aria-labelledby="dashboardTitle">
+        
+        <!-- 【改善要件①】直近7日間の週間スタンプバー -->
+        <div class="omikuji-card" id="omikujiCard">
+          <div class="omikuji-title">
+            <span>📅 今週の読書スタンプ</span>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);" id="streakCountHeader">連続 0 日</span>
+          </div>
 
-    <!-- ===== 結果画面 (朝焼け) ===== -->
-    <div id="result-section" class="w-full max-w-md flex flex-col h-full justify-center hidden opacity-0 z-10 my-auto pb-12">
-        <div class="text-center">
-            <p class="text-sm font-bold text-slate-500 mb-4 tracking-widest">あなたのやらかし</p>
-            <!-- ユーザーの入力テキスト -->
-            <p id="display-user-text" class="text-slate-600 italic mb-12 line-clamp-3">...</p>
-
-            <div class="fade-in" style="animation-delay: 0.5s;">
-                <p id="db-category" class="text-xs font-bold text-orange-600 tracking-widest mb-3">【 〇〇のやらかし 】</p>
-                <!-- 偉人のやらかしテキスト -->
-                <h2 id="db-story" class="text-xl md:text-2xl text-slate-800 font-bold leading-relaxed mb-12">
-                    <!-- Javascriptで挿入される -->
-                </h2>
-            </div>
+          <button class="omikuji-btn" id="omikujiBtn" type="button">今日のスタンプを押す ⭐</button>
+          
+          <!-- 今日・タップした過去のおすすめ本ビジュアル表示エリア -->
+          <div class="omikuji-result-box" id="omikujiResultBox">
+            <div class="omikuji-fortune" id="omikujiFortune">💡 今日のおすすめの一冊</div>
             
-            <div class="fade-in flex flex-col sm:flex-row gap-4 justify-center items-center mb-12" style="animation-delay: 1.5s;">
-                <!-- Xシェアボタン -->
-                <button id="share-x-btn" class="flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-full text-sm font-bold shadow-lg hover:bg-slate-800 transition w-full sm:w-auto">
-                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 22.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
-                    Xで共有
-                </button>
-                <!-- Threadsシェアボタン -->
-                <button id="share-threads-btn" class="flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-full text-sm font-bold shadow-lg hover:bg-slate-800 transition w-full sm:w-auto">
-                    <svg class="w-4 h-4 fill-current" viewBox="0 0 192 192" aria-hidden="true"><path d="M141.537 88.9883C140.71 88.5919 139.87 88.2104 139.019 87.8451C137.537 60.5382 122.616 44.905 97.5619 44.745C97.4484 44.7443 97.3355 44.7443 97.222 44.7443C82.2364 44.7443 69.7731 51.1409 62.102 62.7807L75.881 72.2328C81.6116 63.5383 90.6052 61.6848 97.2286 61.6848C97.3051 61.6848 97.3819 61.6848 97.4576 61.6855C105.707 61.7381 111.932 64.1366 115.961 68.814C118.893 72.2193 120.854 76.925 121.825 82.8638C114.511 81.6207 106.601 81.2385 98.145 81.7233C74.3247 83.0954 59.0111 96.9879 60.0396 116.292C60.5615 126.084 65.4397 134.508 73.775 140.011C80.8224 144.663 89.899 146.938 99.3323 146.423C111.79 145.74 121.563 140.987 128.381 132.296C133.559 125.696 136.834 117.143 138.28 106.366C144.217 109.949 148.617 114.664 151.047 120.332C155.179 129.967 155.42 145.8 142.501 158.708C131.182 170.016 117.576 174.908 97.0135 175.059C74.2042 174.89 56.9538 167.575 45.7381 153.317C35.2355 139.966 29.8077 120.682 29.6052 96C29.8077 71.3178 35.2355 52.0336 45.7381 38.6827C56.9538 24.4249 74.2039 17.11 97.0132 16.9405C119.988 17.1113 137.539 24.4614 149.184 38.788C154.894 45.8136 159.199 54.6488 162.037 64.9503L178.184 60.6422C174.744 47.9622 169.331 37.0357 161.965 27.974C147.036 9.60668 125.202 0.195148 97.0695 0C64.3908 0.196052 40.8801 9.8476 25.121 29.8096C11.984 46.4389 5.46005 68.3651 5.00002 96C5.46005 123.635 11.984 145.561 25.121 162.191C40.8801 182.152 64.3908 191.804 97.0695 192C126.278 191.832 144.57 184.286 158.544 170.323C176.434 152.446 173.805 127.355 166.457 110.366C162.016 100.106 153.308 92.934 141.537 88.9883ZM98.4405 129.507C88.0005 130.095 77.1544 125.409 76.6196 115.372C76.2232 107.93 81.9158 99.626 99.0812 98.0476C101.049 97.8658 102.992 97.7365 104.932 97.649C105.872 97.6053 106.814 97.573 107.754 97.5532C108.647 106.828 105.158 128.857 98.4405 129.507Z"></path></svg>
-                    Threadsで共有
-                </button>
+            <div class="recommend-detail-layout">
+              <a href="#" id="recommendAmazonCoverLink" target="_blank" rel="noopener noreferrer">
+                <div class="recommend-cover-wrapper" id="recommendCoverWrapper"></div>
+              </a>
+              <div class="recommend-info-content">
+                <span class="recommend-book-title" id="recommendBookTitle">『本のタイトル』</span>
+                <span class="recommend-book-author" id="recommendBookAuthor">著者名</span>
+                <a href="#" id="recommendAmazonBtn" target="_blank" rel="noopener noreferrer" class="amazon-btn" style="margin-top: 6px; padding: 4px 8px; font-size: 0.65rem;">🛒 Amazon詳細へ</a>
+              </div>
             </div>
+            <!-- 【要望変更】スタンプをまだ押していない状態のプレースホルダー案内文 -->
+            <div class="omikuji-desc" id="omikujiDesc">スタンプを押すと今日のおすすめの一冊が表示されます♫</div>
+          </div>
 
-            <!-- RECOMMEND (マネタイズ導線) -->
-            <div class="fade-in w-full max-w-sm mx-auto mb-12 border-t border-slate-300 pt-8" style="animation-delay: 2.0s;">
-                <p class="text-xs text-slate-500 font-bold tracking-widest text-center mb-4">RECOMMEND</p>
-                <div class="space-y-3 text-left">
-                    <!-- Amazonアフィリエイトへの導線 1 -->
-                    <a href="https://www.amazon.co.jp/s?k=%E3%82%81%E3%81%90%E3%82%8A%E3%82%BA%E3%83%A0+%E8%92%B8%E6%B0%97%E3%81%A7%E3%83%9B%E3%83%83%E3%83%88%E3%82%A2%E3%82%A4%E3%83%9E%E3%82%B9%E3%82%AF&tag=kojikojiy07-22" target="_blank" rel="noopener noreferrer" class="block bg-white/60 border border-slate-300 p-4 rounded-xl hover:bg-white transition shadow-sm">
-                        <p class="text-sm text-slate-800 font-bold mb-1">とりあえず目を閉じて休もう</p>
-                        <p class="text-xs text-slate-500">めぐりズム 蒸気でホットアイマスク (Amazon)</p>
-                    </a>
-                    <!-- Amazonアフィリエイトへの導線 2 -->
-                    <a href="https://www.amazon.co.jp/s?k=BARTH+%E5%85%A5%E6%B5%B4%E5%89%A4+9%E9%8C%A0&tag=kojikojiy07-22" target="_blank" rel="noopener noreferrer" class="block bg-white/60 border border-slate-300 p-4 rounded-xl hover:bg-white transition shadow-sm">
-                        <p class="text-sm text-slate-800 font-bold mb-1">泥のように眠る準備をしよう</p>
-                        <p class="text-xs text-slate-500">BARTH 重炭酸入浴剤 (Amazon)</p>
-                    </a>
-                </div>
-            </div>
-
-            <!-- リセットボタン -->
-            <button id="reset-btn" class="fade-in w-full bg-slate-900 text-white font-bold py-4 px-6 rounded-2xl hover:bg-slate-800 transition duration-300 shadow-xl focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-[#ff9a55]" style="animation-delay: 2.5s;">
-                もう一度、暗闇に戻る
-            </button>
+          <div class="stamp-calendar-container">
+            <div class="stamp-grid" id="weeklyStampGrid"></div>
+          </div>
         </div>
-    </div>
 
-    <!-- CSVパーサーライブラリ (PapaParse) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+        <!-- 疑似リマインダー通知バナー -->
+        <div class="push-popup-banner" id="reminderPushBanner">
+          <span style="font-size: 1.2rem;">⏰</span>
+          <div class="push-popup-text" id="reminderPushText">返却期限が近づいている本があります！</div>
+        </div>
+
+        <!-- 生涯回収アワード -->
+        <div class="lifetime-panel" id="lifetimePanel">
+          <div class="lifetime-info">
+            <span class="lifetime-label">生涯通算回収実績</span>
+            <strong class="lifetime-value" id="lifetimeTotalDisplay">¥0</strong>
+          </div>
+          <div class="lifetime-badge" id="lifetimeCountDisplay">累計 0 冊読破</div>
+        </div>
+
+        <!-- 回収完了カウンター -->
+        <article class="hero-panel" id="dashboardPanel">
+          <div class="hero-copy">
+            <p class="label">今月の住民税回収度</p>
+            <strong id="recoveredDisplayHeader">¥0 回収済</strong>
+            <span id="monthlyMessage">月額住民税を設定してください。</span>
+          </div>
+          <div class="gauge-wrap" aria-label="住民税回収ゲージ">
+            <div class="gauge-track">
+              <div class="gauge-fill" id="gaugeFill"></div>
+            </div>
+            <div class="gauge-meta">
+              <span id="rateDisplay">0% 回収</span>
+              <span id="monthlyTaxGoalText">目標: ¥0</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- 【特等席】返却が近い本 -->
+        <section class="section-block" style="margin-top: 12px;">
+          <div class="section-heading">
+            <h3>⏰ 返却期限の迫っている本</h3>
+            <span id="dueSummary">期限のある本はありません</span>
+          </div>
+          <div class="book-list compact" id="dueList"></div>
+        </section>
+
+        <!-- カレンダー月切替 -->
+        <div class="month-switcher">
+          <button class="ghost-button" id="prevMonth" type="button">‹</button>
+          <h2 id="dashboardTitle">2026年6月</h2>
+          <button class="ghost-button" id="nextMonth" type="button">›</button>
+        </div>
+
+        <!-- 今月の集計グリッド -->
+        <section class="metric-grid" aria-label="今月の集計">
+          <article class="metric-card">
+            <span>借りた額</span>
+            <strong id="borrowedTotal">¥0</strong>
+          </article>
+          <article class="metric-card">
+            <span>読了額</span>
+            <strong id="readTotal">¥0</strong>
+          </article>
+          <article class="metric-card">
+            <span>借りた冊数</span>
+            <strong id="borrowedCount">0冊</strong>
+          </article>
+          <article class="metric-card">
+            <span>年間回収率</span>
+            <strong id="yearRate">0%</strong>
+          </article>
+        </section>
+
+        <!-- 今月のおすすめ読書情報（PR）バナー -->
+        <aside class="recommended-pr-block" id="recommendedPr">
+          <span class="pr-label">▼ 今月のおすすめ読書情報（PR）</span>
+          
+          <a href="https://www.amazon.co.jp/b?node=7471076051&linkCode=ll2&tag=kojikojiy07-22&linkId=ee0b4b734f384e3ea7cd5d8bb26aa06e&ref_=as_li_ss_tl" id="audibleBannerLink" target="_blank" rel="nofollow noopener" class="pr-link-item">
+            <span class="pr-caption">満員電車でも読書可能！耳からの読書はこちらから ⇓</span>
+            <div class="pr-image-wrapper">
+              <img src="audible_720x90._CB1198675309_.jpg" alt="Audible 30日間無料体験" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=480&auto=format&fit=crop&q=60'">
+            </div>
+          </a>
+
+          <a href="https://www.amazon.co.jp/kindle-dbs/hz/signup?tag=kojikojiy07-22" id="kindleBannerLink" target="_blank" rel="nofollow noopener" class="pr-link-item" style="margin-top: 8px;">
+            <span class="pr-caption">雑誌など電子書籍の読み放題はこちらから ⇓</span>
+            <div class="pr-image-wrapper">
+              <img src="KU-Assocb-2017810-640x100._V518059506_.jpg" alt="Kindle Unlimited 30日間無料体験" onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=480&auto=format&fit=crop&q=60'">
+            </div>
+          </a>
+        </aside>
+
+        <!-- 成果のシェア群 -->
+        <div class="share-buttons-group" style="display: flex; flex-direction: column; gap: 8px; margin-top: 24px; width: 100%;">
+          <button class="share-button" id="xShareBtn" type="button" style="margin-top: 0;">𝕏 に成果をシェア</button>
+          <button class="share-button" id="threadsShareBtn" type="button" style="background-color: #000000; color: #ffffff; margin-top: 0;">Threads に成果をシェア</button>
+          <button class="share-button" id="instaCopyBtn" type="button" style="background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color: #ffffff; margin-top: 0;">Instagram紹介文をコピー</button>
+          <button class="app-invite-button" id="appInviteBtn" type="button">🔗 このアプリを友達に教える</button>
+        </div>
+
+        <!-- 1ヶ月フル表示の「月間スタンプ履歴カレンダー」を画面の最下部に移動 -->
+        <div class="omikuji-card" style="margin-top: 32px; margin-bottom: 0;" id="monthlyCalendarBlock">
+          <div class="stamp-calendar-container">
+            <div class="stamp-calendar-header">
+              <span>📅 今月のスタンプ履歴カレンダー</span>
+              <span style="font-size: 0.65rem; color: var(--accent); font-weight: bold;">日付タップで過去のレコメンドを復元！</span>
+            </div>
+            <div class="stamp-grid" id="monthlyStampGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ビュー: 登録 -->
+      <section class="view" id="view-scan" aria-labelledby="scanTitle">
+        <div class="section-heading">
+          <h2 id="scanTitle">登録</h2>
+          <span>秒速カメラ読み取り、または手入力</span>
+        </div>
+
+        <div class="scanner-trigger-box" id="startScannerBtn">
+          <span class="scanner-icon">📸</span>
+          <span class="scanner-title">本のバーコード（ISBN）をスキャン</span>
+          <span class="scanner-subtitle">カメラをかざすだけで書籍情報を一瞬で読み込みます</span>
+        </div>
+
+        <form class="isbn-form" id="isbnForm">
+          <label>
+            ISBNを手動で入力
+            <input id="isbnInput" inputmode="numeric" autocomplete="off" placeholder="例: 9784046051158" />
+          </label>
+          <button class="primary-button" type="submit" id="isbnSearchBtn">ISBNで検索</button>
+        </form>
+
+        <form class="book-form" id="bookForm">
+          <div class="section-heading">
+            <h3>登録内容</h3>
+            <span id="lookupSource">手入力でも登録できます</span>
+          </div>
+          <label>
+            タイトル
+            <input id="titleInput" required placeholder="本のタイトル" />
+          </label>
+          <label>
+            価格
+            <input id="priceInput" required inputmode="numeric" placeholder="本体価格または税込価格" />
+          </label>
+          <label>
+            著者
+            <input id="authorInput" placeholder="任意" />
+          </label>
+          <label>
+            借りた日（登録日）
+            <input id="borrowDateInput" type="date" required />
+          </label>
+          <label>
+            返却期限（任意）
+            <input id="dueInput" type="date" />
+          </label>
+          <input id="hiddenIsbn" type="hidden" />
+          <input id="hiddenCoverUrl" type="hidden" />
+          <button class="primary-button" type="submit">この本をストックに登録</button>
+        </form>
+      </section>
+
+      <!-- ビュー: 本棚 -->
+      <section class="view" id="view-shelf" aria-labelledby="shelfTitle">
+        
+        <div class="history-toggle-container">
+          <button class="history-toggle-btn is-active" id="btnShelfMonth" type="button">今月の本棚</button>
+          <button class="history-toggle-btn" id="btnShelfAll" type="button">全履歴ストック</button>
+        </div>
+
+        <!-- カレンダー月切替 -->
+        <div class="month-switcher" id="shelfMonthSwitcher">
+          <button class="ghost-button" id="shelfPrevMonth" type="button">‹</button>
+          <h2 id="shelfTitle">2026年6月</h2>
+          <button class="ghost-button" id="shelfNextMonth" type="button">›</button>
+        </div>
+
+        <!-- 検索・並び替え・絞り込みコントロール -->
+        <div class="shelf-controls">
+          <div class="shelf-search-row">
+            <input type="text" id="shelfSearch" class="shelf-search-input" placeholder="タイトルや著者で検索...">
+          </div>
+          <div class="shelf-filter-row">
+            <select id="shelfSort" class="shelf-sort-select">
+              <option value="date_desc">登録日が新しい順</option>
+              <option value="date_asc">登録日が古い順</option>
+              <option value="price_desc">価格が高い順</option>
+              <option value="due_asc">返却期限が近い順</option>
+            </select>
+            <div class="filter-tabs">
+              <button type="button" class="filter-btn is-active" data-status="all">全て</button>
+              <button type="button" class="filter-btn" data-status="borrowed">未読</button>
+              <button type="button" class="filter-btn" data-status="read">読了</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-heading">
+          <h3 id="shelfSummaryHeader">月ごとの本棚</h3>
+          <span id="shelfSummary">0冊</span>
+        </div>
+        <div class="book-list" id="bookList"></div>
+      </section>
+
+      <!-- ビュー: 設定 -->
+      <section class="view" id="view-settings" aria-labelledby="settingsTitle">
+        <div class="section-heading">
+          <h2 id="settingsTitle">設定</h2>
+          <span>基本条件＆テーマのカスタム</span>
+        </div>
+
+        <!-- スタイル切り替え＆ダークモード設定 -->
+        <div class="setting-item-block">
+          <h3 style="font-size: 0.9rem; font-weight: bold;">🎨 デザインスタイル</h3>
+          <div class="style-options">
+            <button class="style-card is-selected" data-style="library" type="button">
+              <span>図書館</span>
+              <small>落ち着いた調</small>
+            </button>
+            <button class="style-card" data-style="statement" type="button">
+              <span>明細</span>
+              <small>税金通知風</small>
+            </button>
+            <button class="style-card" data-style="game" type="button">
+              <span>ゲーム</span>
+              <small>削り特化</small>
+            </button>
+          </div>
+        </div>
+
+        <div class="setting-item-block">
+          <div class="setting-row-flex">
+            <span style="font-size: 0.9rem; font-weight: bold;">🌙 ナイトモード (ダークテーマ)</span>
+            <button class="icon-button" id="themeToggle" type="button" style="background-color: var(--bg-app);" aria-label="表示テーマを切り替え">◐</button>
+          </div>
+        </div>
+
+        <form class="settings-form" id="settingsForm" style="margin-top: 16px;">
+          <label>
+            月額住民税 (¥)
+            <input id="taxInput" required inputmode="numeric" placeholder="18000" />
+          </label>
+          <label>
+            標準の返却期間
+            <select id="loanDaysInput">
+              <option value="7">1週間</option>
+              <option value="14">2週間</option>
+              <option value="21">3週間</option>
+              <option value="30">30日</option>
+            </select>
+          </label>
+          <label>
+            アプリを始める前の過去の累計読書金額 (¥)
+            <input id="preAddTaxInput" inputmode="numeric" placeholder="例: 25000" />
+          </label>
+          <button class="primary-button" type="submit">設定を保存する</button>
+        </form>
+
+        <!-- 常設おすすめ読書グッズリスト -->
+        <section class="section-block" style="background-color: var(--bg-card); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border-color); box-shadow: var(--shadow); margin-bottom: 24px;">
+          <span class="pr-label">▼ 快適な読書ライフのための厳選グッズ（PR）</span>
+          <div class="goods-grid">
+            <div class="goods-item-card">
+              <span class="goods-item-title">💡 夜間でも目が疲れない高性能読書ライト</span>
+              <a href="https://www.amazon.co.jp/s?k=読書ライト&tag=kojikojiy07-22" target="_blank" rel="nofollow noopener" class="goods-buy-btn" onclick="trackAffiliateClick('goods_light', '読書ライト常設')">Amazonで探す</a>
+            </div>
+            <div class="goods-item-card">
+              <span class="goods-item-title">📖 ハンズフリーで快適！重い本用の書見台</span>
+              <a href="https://www.amazon.co.jp/s?k=書見台+ブックスタンド&tag=kojikojiy07-22" target="_blank" rel="nofollow noopener" class="goods-buy-btn" onclick="trackAffiliateClick('goods_stand', '書見台常設')">Amazonで探す</a>
+            </div>
+            <div class="goods-item-card">
+              <span class="goods-item-title">🧘 長時間読んでも腰が痛まない低反発クッション</span>
+              <a href="https://www.amazon.co.jp/s?k=骨盤クッション+低反発&tag=kojikojiy07-22" target="_blank" rel="nofollow noopener" class="goods-buy-btn" onclick="trackAffiliateClick('goods_cushion', 'クッション常設')">Amazonで探す</a>
+            </div>
+            <div class="goods-item-card">
+              <span class="goods-item-title">📱 目に優しい電子ペーパー搭載の最新Kindle</span>
+              <a href="https://www.amazon.co.jp/s?k=Kindle+端末&tag=kojikojiy07-22" target="_blank" rel="nofollow noopener" class="goods-buy-btn" onclick="trackAffiliateClick('goods_kindle', 'Kindle端末常設')">Amazonで探す</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- 𝕏公式SNS案内 -->
+        <section class="section-block">
+          <div class="section-heading">
+            <h3>公式SNS・サポート</h3>
+            <span>最新アップデート情報はこちら</span>
+          </div>
+          <div style="background-color: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+            <p style="font-size: 0.8rem; line-height: 1.4;">「税金回収カウンター」の公式𝕏アカウントを開設しました！最新情報や機能要望はこちらへどうぞ。</p>
+            <a href="https://x.com/zeikinzero" id="xFollowLink" target="_blank" rel="noopener noreferrer" class="x-follow-button">
+              𝕏 @zeikinzero をフォローする
+            </a>
+          </div>
+        </section>
+
+        <!-- 法的表記・プライバシーポリシー -->
+        <section class="section-block">
+          <div class="section-heading">
+            <h3>法的表記・情報管理</h3>
+            <span>安心してお使いいただくために</span>
+          </div>
+          <details class="policy-details">
+            <summary class="policy-summary">プライバシーポリシー・免責事項はこちら ▼</summary>
+            <div class="policy-content">
+              <span class="policy-title">■ 免責事項</span>
+              <p>※本アプリにおけるシミュレーション結果（借りた本の価格合計等）は住民税の回収度合いを視覚化する目安であり、実際の納税額を軽減または確定・保証するものではありません。正確な税額に関しては各自治たちの窓口や税理士にお問い合わせください。</p>
+              
+              <span class="policy-title">■ アフィリエイト広告について</span>
+              <p>税金回収カウンターは, Amazon.co.jpを宣伝しリンクすることによってサイトが紹介料を獲得できる手段を提供することを目的に設定されたアフィリエイトプログラムである、Amazonアソシエイト・プログラムの参加者です。</p>
+              
+              <span class="policy-title">■ アクセス解析・Google AdSenseについて</span>
+              <p>当アプリではアクセス状況の測定に「Google Analytics」を使用し、広告配信に「Google AdSense」を利用しています。これらはデータ収集や広告最適化のためにCookieを使用しますが、匿名で収集されており個人を特定するものではありません。</p>
+              
+              <span class="policy-title">■ データの保護・プライバシー</span>
+              <p>当アプリはユーザーが登録した本の情報や設定値を外部サーバー等には一切送信せず、お使いの端末（ブラウザのLocalStorage）に安全に保存する仕組みとなっています。個人情報の流出リスクはありませんので安心してご利用いただけます。</p>
+            </div>
+          </details>
+        </section>
+      </section>
+    </main>
+
+    <!-- フッターナビゲーション -->
+    <nav class="tabbar" aria-label="メインナビゲーション">
+      <button class="tab is-active" data-tab="dashboard" type="button"><span>今月</span></button>
+      <button class="tab" data-tab="scan" type="button"><span>登録</span></button>
+      <button class="tab" data-tab="shelf" type="button"><span>本棚</span></button>
+      <button class="tab" data-tab="settings" type="button"><span>設定</span></button>
+    </nav>
 
     <script>
-        // --- データベース連携設定 ---
-        // いただいたGoogleスプレッドシートのURL（CSV出力用に変換済）
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLbE5BnggnXqIK1EhlIWlzqel7mJHsrgEJgbHiq1EztuH9MPKD_Uq7EIOY7k7Og9Er5Y3nOHxUuKcj/pub?output=csv";
+      // ご指定のAmazonアソシエイトStore ID
+      const AMAZON_ASSOCIATE_ID = "kojikojiy07-22";
 
-        let yarukashiDB = [];
-        let historyData = [];
-        let currentRecord = null; // 現在表示中のデータ
+      document.addEventListener('DOMContentLoaded', () => {
+        // --- 状態(State) ---
+        let state = {
+          settings: {
+            monthlyTax: 15000,
+            loanDays: 14,
+            preAddTax: 0,
+            style: 'library'
+          },
+          theme: 'light',
+          books: [],
+          currentMonth: '',
+          shelfMode: 'month',
+          shelfFilterStatus: 'all',
+          shelfSearchQuery: '',
+          shelfSortKey: 'date_desc',
+          
+          lastOmikujiDate: '', // YYYY-MM-DD
+          loginStreak: 0,       
+          stampLogs: {}        
+        };
 
-        // --- DOM要素の取得 ---
-        const appBody = document.getElementById('app-body');
-        const inputSection = document.getElementById('input-section');
-        const resultSection = document.getElementById('result-section');
-        
-        const userInput = document.getElementById('user-input');
-        const submitBtn = document.getElementById('submit-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        
-        const displayUserText = document.getElementById('display-user-text');
-        const dbCategory = document.getElementById('db-category');
-        const dbStory = document.getElementById('db-story');
+        // --- セレンディピティ枠 ---
+        const serendipityFortunes = [
+          { name: "放浪・読書日和 🗺️", author: "開発者セレクト", desc: "今日はあえて本を読まずに、お気に入りの本屋や図書館をあてなく散歩してみる日。全く興味のなかった棚の前で3秒立ち止まると、人生を変えるセレンディピティ（本）に出会えます！" },
+          { name: "余白・デトックス ☕", author: "開発者セレクト", desc: "今日はあえてスマホの通知をオフにして、紙の書籍の『インクの香り』と『手触り』を五感で楽しむ日。喫茶店でただ 1 冊の本と向き合う、贅沢な住民税回収タイムをどうぞ。" },
+          { name: "ジャケ買いの予感 🎨", author: "開発者セレクト", desc: "今日は、タイトルや著者ではなく『本の表紙デザイン（ジャケ絵）』だけで惹かれる1冊を直感で選んでみましょう。直感は、あなたの脳が今一番必要としている知識を知っています。" },
+          { name: "名著・再読のススメ 🔄", author: "開発者セレクト", desc: "新しい本を探すのも良いですが、数年前に読んで感動した本、あるいは本棚の隅で眠っているお気に入りをもう一度開いてみましょう。自分が成長した分、全く違う新しい発見が必ずあります。" },
+          { name: "あえて「読まない」贅沢 💤", author: "開発者セレクト", desc: "今日はインプットをお休みして、これまでに読んだ本の内容をボーッと回想する日にしましょう。静かなお風呂や散歩の中で、点と点だった知識が繋がり、新しいアイデアが生まれます。" }
+        ];
 
-        const historyList = document.getElementById('history-list');
-        const emptyHistoryText = document.getElementById('empty-history');
+        // --- 初期化 ---
+        const init = () => {
+          // 初期表示で「今月」タブを最優先で確実にアクティブ化
+          document.querySelectorAll('.tab, .view').forEach(el => el.classList.remove('is-active'));
+          const initialTab = document.querySelector('.tab[data-tab="dashboard"]');
+          if (initialTab) initialTab.classList.add('is-active');
+          const initialView = document.getElementById('view-dashboard');
+          if (initialView) initialView.classList.add('is-active');
 
-        // --- データの初期読み込み (スプレッドシートから) ---
-        function loadDatabase() {
-            const originalBtnText = submitBtn.textContent;
-            submitBtn.textContent = "データベースを読み込み中...";
-            submitBtn.disabled = true;
-            submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, '0');
+          state.currentMonth = `${yyyy}-${mm}`;
 
-            Papa.parse(SHEET_CSV_URL, {
-                download: true,
-                header: true,
-                complete: function(results) {
-                    // スプレッドシートの列名に合わせて、text, 人物名, ジャンル が存在する行だけを抽出
-                    yarukashiDB = results.data.filter(row => row.text && row['人物名'] && row['ジャンル']);
-                    if(yarukashiDB.length === 0) {
-                        alert("データベースの読み込みに失敗したか、データが空です。");
-                    }
-                    submitBtn.textContent = originalBtnText;
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
-                },
-                error: function(err) {
-                    console.error("CSV読み込みエラー:", err);
-                    alert("データベースの読み込みに失敗しました。URLを確認してください。");
-                    submitBtn.textContent = "読み込みエラー";
-                }
+          const savedState = localStorage.getItem('tax_recovery_state');
+          if (savedState) {
+            try {
+              const parsed = JSON.parse(savedState);
+              state.settings = { ...state.settings, ...parsed.settings };
+              state.theme = parsed.theme || 'light';
+              state.books = parsed.books || [];
+              state.lastOmikujiDate = parsed.lastOmikujiDate || '';
+              state.loginStreak = parsed.loginStreak || 0;
+              state.stampLogs = (parsed && parsed.stampLogs && typeof parsed.stampLogs === 'object') ? parsed.stampLogs : {};
+            } catch (e) {
+              console.error("データの読み込みに失敗", e);
+            }
+          }
+
+          document.body.setAttribute('data-theme', state.theme);
+          document.body.setAttribute('data-style', state.settings.style);
+          
+          document.getElementById('taxInput').value = state.settings.monthlyTax;
+          document.getElementById('loanDaysInput').value = state.settings.loanDays;
+          document.getElementById('preAddTaxInput').value = state.settings.preAddTax || 0;
+
+          updateStyleButtons();
+          renderAll();
+          setDefaultDueDate();
+          bindStaticBannersAnalytics();
+
+          // 返却リマインダー通知ポップアップ起動
+          checkIncomingDueDates();
+
+          // 週間＆月間スタンプカレンダー帳の描画
+          renderStampCalendars();
+        };
+
+        // --- 保存 ---
+        const saveToStorage = () => {
+          localStorage.setItem('tax_recovery_state', JSON.stringify({
+            settings: state.settings,
+            theme: state.theme,
+            books: state.books,
+            lastOmikujiDate: state.lastOmikujiDate,
+            loginStreak: state.loginStreak,
+            stampLogs: state.stampLogs
+          }));
+        };
+
+        // --- 通知 ---
+        const showToast = (message) => {
+          const toast = document.getElementById('toast');
+          if (toast) {
+            toast.textContent = message;
+            toast.classList.add('is-show');
+            setTimeout(() => { toast.classList.remove('is-show'); }, 3000);
+          }
+        };
+
+        // --- 週間バー（上部）＆月間カレンダー（最下部）描画 ---
+        const renderStampCalendars = () => {
+          const today = new Date();
+          const currentY = today.getFullYear();
+          const currentM = today.getMonth();
+          const todayStr = getTodayDateString();
+          
+          const weeklyGrid = document.getElementById('weeklyStampGrid');
+          const monthlyGrid = document.getElementById('monthlyStampGrid');
+          const streakHeader = document.getElementById('streakCountHeader');
+
+          if (!weeklyGrid || !monthlyGrid) return;
+          
+          // 1. 今月の総獲得数を集計
+          const currentMonthPrefix = `${currentY}-${String(currentM + 1).padStart(2, '0')}`;
+          const currentMonthStampCount = Object.keys(state.stampLogs || {}).filter(k => k.startsWith(currentMonthPrefix)).length;
+          if (streakHeader) streakHeader.textContent = `今月 ${currentMonthStampCount} 個獲得`;
+
+          // 2. 【上部】直近7日間の週間スタンプバーデータ生成
+          const last7Days = [];
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            last7Days.push({
+              dateStr: dateStr,
+              dayLabel: `${d.getMonth()+1}/${d.getDate()}`,
+              shortDay: `${d.getDate()}`
             });
-        }
+          }
 
-        // --- 履歴の読み込みと表示 ---
-        function loadHistory() {
-            const stored = localStorage.getItem('yarukashiHistory');
-            if (stored) {
-                historyData = JSON.parse(stored);
-                updateHistoryList();
-            }
-        }
+          weeklyGrid.innerHTML = last7Days.map(day => {
+            const hasStamp = state.stampLogs[day.dateStr] ? true : false;
+            let classes = 'stamp-box';
+            if (hasStamp) classes += ' is-active';
+            if (day.dateStr === todayStr) classes += ' is-today';
 
-        function updateHistoryList() {
-            historyList.innerHTML = '';
-            if (historyData.length === 0) {
-                emptyHistoryText.style.display = 'block';
-                return;
-            }
-            
-            emptyHistoryText.style.display = 'none';
-            historyData.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'bg-slate-800 p-4 rounded-xl text-left border border-slate-700';
-                div.innerHTML = `
-                    <p class="text-xs text-slate-400 mb-2 truncate">あなた: ${item.userText}</p>
-                    <p class="text-sm text-slate-200 line-clamp-2">${item.dbData['人物名']}: ${item.dbData.text}</p>
-                `;
-                historyList.appendChild(div);
+            return `
+              <div class="${classes}" onclick="viewStampArchive('${day.dateStr}', '${day.dayLabel}')">
+                <span style="font-size: 0.6rem; opacity: 0.85; margin-bottom:2px;">${day.dayLabel}</span>
+              </div>
+            `;
+          }).join('');
+
+          // 3. 【最下部】1ヶ月マスカレンダーのデータ生成
+          const firstDayOfM = new Date(currentY, currentM, 1);
+          const lastDayOfM = new Date(currentY, currentM + 1, 0);
+          const startDayOfWeek = firstDayOfM.getDay();
+          const totalDays = lastDayOfM.getDate();
+
+          const calendarCells = [];
+          for (let i = 0; i < startDayOfWeek; i++) {
+            calendarCells.push({ empty: true });
+          }
+          for (let day = 1; day <= totalDays; day++) {
+            const dateStr = `${currentY}-${String(currentM + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const compareDate = new Date(currentY, currentM, day);
+            calendarCells.push({
+              empty: false,
+              day: day,
+              dateStr: dateStr,
+              isToday: dateStr === todayStr,
+              isFuture: compareDate > today
             });
-        }
+          }
 
-        function saveToHistory(record) {
-            historyData.unshift(record); // 先頭に追加
-            // 最大20件程度に制限（ストレージ溢れ防止）
-            if(historyData.length > 20) historyData.pop();
-            localStorage.setItem('yarukashiHistory', JSON.stringify(historyData));
-            updateHistoryList();
-        }
+          monthlyGrid.innerHTML = calendarCells.map(cell => {
+            if (cell.empty) {
+              return `<div class="stamp-box" style="visibility: hidden;"></div>`;
+            }
+            const hasStamp = state.stampLogs[cell.dateStr] ? true : false;
+            let classes = 'stamp-box';
+            if (hasStamp) classes += ' is-active';
+            if (cell.isToday) classes += ' is-today';
+            if (cell.isFuture) classes += ' is-future';
 
-        // --- シェアテキスト生成 ---
-        function generateShareText() {
-            if (!currentRecord) return "";
-            // SNS投稿用のフォーマット（人物名を使用）
-            const text = `私のやらかし\n「${currentRecord.userText}」\n\nでも、${currentRecord.dbData['人物名']}は\n「${currentRecord.dbData.text}」\nらしい。\n\n私なんてまだまだ。\n#下には下がいる`;
-            return encodeURIComponent(text);
-        }
+            return `
+              <div class="${classes}" onclick="viewStampArchive('${cell.dateStr}', '${cell.day}日')">
+                <span style="font-size: 0.65rem; font-weight: 800;">${cell.day}</span>
+              </div>
+            `;
+          }).join('');
 
-        // --- イベントリスナー ---
+          // 4. 本日のスタンプ押印おみくじエリア制御
+          if (state.stampLogs[todayStr]) {
+            document.getElementById('omikujiBtn').style.display = 'none';
+            document.getElementById('omikujiResultBox').style.display = 'block';
+            updateRecommendBookUI(state.stampLogs[todayStr]);
+          } else {
+            document.getElementById('omikujiBtn').style.display = 'inline-block';
+            document.getElementById('omikujiResultBox').style.display = 'none';
+            
+            // 【要望】まだ本日のスタンプを押していない時のプレースホルダー設定
+            const descEl = document.getElementById('omikujiDesc');
+            if (descEl) descEl.textContent = "スタンプを押すと今日のおすすめの一冊が表示されます♫";
+          }
+        };
 
-        // X(Twitter)シェア
-        document.getElementById('share-x-btn').addEventListener('click', () => {
-            const shareText = generateShareText();
-            const xUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
-            window.open(xUrl, '_blank');
+        // おすすめ本表示エリア（UI）の描画（個別商品詳細ページ直リンク対応）
+        const updateRecommendBookUI = (log) => {
+          if (!log || typeof log !== 'object') return;
+
+          const coverWrapper = document.getElementById('recommendCoverWrapper');
+          const titleEl = document.getElementById('recommendBookTitle');
+          const authorEl = document.getElementById('recommendBookAuthor');
+          const descEl = document.getElementById('recommendDesc');
+          const amazonBtn = document.getElementById('recommendAmazonBtn');
+          const amazonCoverLink = document.getElementById('recommendAmazonCoverLink');
+
+          const bookTitle = log.rawTitle || log.name || 'おすすめの一冊';
+          if (titleEl) titleEl.textContent = bookTitle;
+          if (authorEl) authorEl.textContent = log.author || '開発者セレクト';
+          if (descEl) descEl.textContent = log.desc || '';
+
+          // ASIN変換対応の安全なAmazon詳細URLの構築
+          const amazonUrl = generateAmazonUrl(bookTitle, log.isbn);
+          if (amazonBtn) {
+            amazonBtn.href = amazonUrl;
+            amazonBtn.setAttribute('onclick', `trackAffiliateClick('recommend_detail_btn', '${escapeJS(bookTitle)}')`);
+          }
+          if (amazonCoverLink) {
+            amazonCoverLink.href = amazonUrl;
+            amazonCoverLink.setAttribute('onclick', `trackAffiliateClick('recommend_detail_cover', '${escapeJS(bookTitle)}')`);
+          }
+
+          // 書影表示
+          if (coverWrapper) {
+            if (log.coverUrl) {
+              coverWrapper.innerHTML = `<img class="recommend-cover-img" src="${log.coverUrl}" alt="表紙" onerror="this.parentElement.innerHTML='<span class=\'recommend-cover-placeholder\'>📚</span>'">`;
+            } else {
+              coverWrapper.innerHTML = `<span class="recommend-cover-placeholder">📚</span>`;
+            }
+          }
+        };
+
+        // 日付をタップした時アーカイブからロード
+        window.viewStampArchive = (dateStr, dayLabel) => {
+          const log = state.stampLogs[dateStr];
+          if (!log || typeof log !== 'object') {
+            showToast(`${dayLabel} のスタンプラリーはまだ押されていません。`);
+            return;
+          }
+
+          const resultBox = document.getElementById('omikujiResultBox');
+          if (resultBox) resultBox.style.display = 'block';
+          
+          updateRecommendBookUI(log);
+          
+          const fortuneEl = document.getElementById('omikujiFortune');
+          if (fortuneEl) fortuneEl.textContent = `📅 ${dayLabel} のおすすめ本バックナンバー`;
+          
+          showToast(`${dayLabel} のおすすめ履歴を復元しました！`);
+          
+          const cardEl = document.getElementById('omikujiCard');
+          if (cardEl) cardEl.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        // スタンプを押す ＆ 本棚からおすすめ本を安全に選定
+        document.getElementById('omikujiBtn').addEventListener('click', () => {
+          const todayStr = getTodayDateString();
+          
+          let recommendName = "";
+          let rawTitle = "";
+          let authorName = "開発者セレクト";
+          let recommendDesc = "";
+          let coverUrl = "";
+          let isbn = "";
+          
+          const isSerendipity = Math.random() < 0.15;
+          const allBooks = state.books || [];
+
+          if (isSerendipity || allBooks.length === 0) {
+            const luck = serendipityFortunes[Math.floor(Math.random() * serendipityFortunes.length)];
+            recommendName = luck.name;
+            rawTitle = luck.name;
+            authorName = luck.author;
+            recommendDesc = luck.desc;
+          } else {
+            const randomBook = allBooks[Math.floor(Math.random() * allBooks.length)];
+            rawTitle = randomBook.title || '無題の書籍';
+            authorName = randomBook.author || "著者不明";
+            recommendName = `『${rawTitle}』`;
+            coverUrl = randomBook.coverUrl || '';
+            isbn = randomBook.isbn || '';
+            
+            if (randomBook.status === 'read') {
+              recommendDesc = `あなたが以前読了したこの本を覚えていますか？素晴らしい知恵が詰まっていたはずです。快適読書グッズ（設定タブに掲載中）を使って、もう一度再読・コレクションしてみるのはいかがでしょうか？`;
+            } else {
+              recommendDesc = `本棚で眠っているこの本を、今日こそページを開いてみるチャンス！5ページだけで良いので、電車の待ち時間や寝る前に流し読みして住民税をゴリゴリ回収しましょう！`;
+            }
+          }
+
+          state.loginStreak = (state.loginStreak % 30) + 1;
+          state.lastOmikujiDate = todayStr;
+          
+          // ログ構造化
+          state.stampLogs[todayStr] = {
+            name: recommendName,
+            rawTitle: rawTitle,
+            author: authorName,
+            desc: recommendDesc,
+            coverUrl: coverUrl,
+            isbn: isbn,
+            timestamp: Date.now()
+          };
+          
+          saveToStorage();
+          renderStampCalendars();
+          showToast(`今日の読書スタンプを押しました！`);
+
+          logAppEvent('omikuji_draw', { 'fortune_name': rawTitle, 'streak_count': state.loginStreak });
         });
 
-        // Threadsシェア
-        document.getElementById('share-threads-btn').addEventListener('click', () => {
-            const shareText = generateShareText();
-            const threadsUrl = `https://www.threads.net/intent/post?text=${shareText}`;
-            window.open(threadsUrl, '_blank');
-        });
+        const getTodayDateString = () => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        };
 
-        // 「下を見る」ボタンクリック
-        submitBtn.addEventListener('click', () => {
-            const text = userInput.value.trim();
-            if (!text) {
-                alert("やらかした内容を入力してください。");
-                return;
+        // 返却期限接近リマインダー通知
+        const checkIncomingDueDates = () => {
+          const borrowedBooksWithDue = (state.books || []).filter(b => b.status === 'borrowed' && b.dueDate);
+          if (borrowedBooksWithDue.length === 0) return;
+
+          const today = new Date(); today.setHours(0,0,0,0);
+          let urgentCount = 0;
+
+          borrowedBooksWithDue.forEach(b => {
+            const dueDate = new Date(b.dueDate); dueDate.setHours(0,0,0,0);
+            const diffTime = dueDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 3) urgentCount++;
+          });
+
+          if (urgentCount > 0) {
+            const banner = document.getElementById('reminderPushBanner');
+            const textEl = document.getElementById('reminderPushText');
+            if (banner && textEl) {
+              textEl.textContent = `返却期限があと3日以内の本が ${urgentCount} 冊あります！早く読んで住民税を回収しましょう！`;
+              banner.style.display = 'flex';
+            }
+          }
+        };
+
+        // デフォルト日付セット
+        const setDefaultDueDate = () => {
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, '0');
+          const dd = String(today.getDate()).padStart(2, '0');
+          
+          const borrowInput = document.getElementById('borrowDateInput');
+          if (borrowInput) borrowInput.value = `${yyyy}-${mm}-${dd}`;
+
+          const loanDays = parseInt(state.settings.loanDays) || 14;
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + loanDays);
+          
+          const dueInput = document.getElementById('dueInput');
+          if (dueInput) dueInput.value = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`;
+        };
+
+        // 全描画反映
+        const renderAll = () => {
+          const [year, month] = state.currentMonth.split('-');
+          const dashboardTitle = document.getElementById('dashboardTitle');
+          const shelfTitle = document.getElementById('shelfTitle');
+          if (dashboardTitle) dashboardTitle.textContent = `${year}年${parseInt(month)}月`;
+          if (shelfTitle) shelfTitle.textContent = `${year}年${parseInt(month)}月`;
+
+          const booksInMonth = (state.books || []).filter(b => b.month === state.currentMonth);
+          const borrowedSum = booksInMonth.reduce((sum, b) => sum + b.price, 0);
+          const readSum = booksInMonth.filter(b => b.status === 'read').reduce((sum, b) => sum + b.price, 0);
+
+          const monthlyTax = state.settings.monthlyTax;
+          
+          const recHead = document.getElementById('recoveredDisplayHeader');
+          const taxGoal = document.getElementById('monthlyTaxGoalText');
+          if (recHead) recHead.textContent = `¥${readSum.toLocaleString()} 回収済`;
+          if (taxGoal) taxGoal.textContent = `今月の目標: ¥${monthlyTax.toLocaleString()}`;
+
+          const borrowedTotal = document.getElementById('borrowedTotal');
+          const readTotal = document.getElementById('readTotal');
+          const borrowedCount = document.getElementById('borrowedCount');
+          const yearRate = document.getElementById('yearRate');
+
+          if (borrowedTotal) borrowedTotal.textContent = `¥${borrowedSum.toLocaleString()}`;
+          if (readTotal) readTotal.textContent = `¥${readSum.toLocaleString()}`;
+          if (borrowedCount) borrowedCount.textContent = `${booksInMonth.length}冊`;
+
+          const messageSpan = document.getElementById('monthlyMessage');
+          if (messageSpan) {
+            if (monthlyTax <= 0) {
+              messageSpan.textContent = '設定から月額住民税を登録してください。';
+            } else if (readSum >= monthlyTax) {
+              messageSpan.textContent = '今月の住民税を100%全額回収完了！お見事です！';
+            } else {
+              messageSpan.textContent = `あと ¥${(monthlyTax - readSum).toLocaleString()} の読書で全額元取り達成です。`;
+            }
+          }
+
+          const recoveryRate = monthlyTax > 0 ? Math.min(Math.round((readSum / monthlyTax) * 100), 100) : 0;
+          const gaugeFill = document.getElementById('gaugeFill');
+          const rateDisplay = document.getElementById('rateDisplay');
+          if (gaugeFill) gaugeFill.style.width = `${recoveryRate}%`;
+          if (rateDisplay) rateDisplay.textContent = `${recoveryRate}% 回収達成`;
+
+          const totalReadBooks = (state.books || []).filter(b => b.status === 'read');
+          const totalReadSum = totalReadBooks.reduce((sum, b) => sum + b.price, 0);
+          const preAddTax = parseInt(state.settings.preAddTax) || 0;
+          const lifetimeTotal = totalReadSum + preAddTax;
+
+          const lifeTotalDisp = document.getElementById('lifetimeTotalDisplay');
+          const lifeCountDisp = document.getElementById('lifetimeCountDisplay');
+          if (lifeTotalDisp) lifeTotalDisp.textContent = `¥${lifetimeTotal.toLocaleString()}`;
+          if (lifeCountDisp) lifeCountDisp.textContent = `累計 ${totalReadBooks.length} 冊読破`;
+
+          const booksInYear = (state.books || []).filter(b => b.month.startsWith(year));
+          const yearReadSum = booksInYear.filter(b => b.status === 'read').reduce((sum, b) => sum + b.price, 0);
+          const calculatedYearRate = (monthlyTax * 12) > 0 ? Math.min(Math.round((yearReadSum / (monthlyTax * 12)) * 100), 100) : 0;
+          if (yearRate) yearRate.textContent = `${calculatedYearRate}%`;
+
+          renderShelfList();
+          renderDueList();
+        };
+
+        // 【大拡張】13桁ISBNコードを10桁ISBN（ASIN）へ変換する超高精度ロジック
+        const convertIsbn13To10 = (isbn13) => {
+          if (!isbn13 || typeof isbn13 !== 'string') return null;
+          const cleanIsbn = isbn13.replace(/-/g, '').trim();
+          if (cleanIsbn.length !== 13 || !cleanIsbn.startsWith('978')) return null;
+
+          // 978から始まる13桁のうち、頭の3桁(978)と最後のチェックディジット(1桁)を除いた、真ん中の9桁を取得
+          const base9 = cleanIsbn.substring(3, 12);
+          
+          // 10桁チェックディジットの算出
+          let sum = 0;
+          for (let i = 0; i < 9; i++) {
+            sum += parseInt(base9.charAt(i)) * (10 - i);
+          }
+          const remainder = sum % 11;
+          const diff = 11 - remainder;
+          
+          let checkDigit = "";
+          if (diff === 10) {
+            checkDigit = "X";
+          } else if (diff === 11) {
+            checkDigit = "0";
+          } else {
+            checkDigit = String(diff);
+          }
+
+          return base9 + checkDigit;
+        };
+
+        // 【劇的改善】検索結果を回避し、書籍の「商品個別販売ページ」に直接ピンポイント遷移させるリンク生成ロジック
+        const generateAmazonUrl = (title, isbn) => {
+          // ISBNコードが存在する場合、10桁のASINに自動変換して商品個別詳細ページに直接ジャンプ
+          if (isbn && typeof isbn === 'string') {
+            const cleanIsbn = isbn.replace(/-/g, '').trim();
+            let asin = null;
+            
+            if (cleanIsbn.length === 10) {
+              asin = cleanIsbn;
+            } else if (cleanIsbn.length === 13) {
+              asin = convertIsbn13To10(cleanIsbn);
             }
 
-            if (yarukashiDB.length === 0) {
-                 alert("データベースの準備ができていません。リロードするか少しお待ち下さい。");
-                 return;
+            if (asin) {
+              // 楽天・Amazonの検索画面をすり抜けて、具体的な商品（書籍）ページに直接飛びます
+              return `https://www.amazon.co.jp/dp/${asin}?tag=${AMAZON_ASSOCIATE_ID}`;
             }
+          }
 
-            // ユーザー入力を表示にセット
-            displayUserText.textContent = `「${text}」`;
+          // ISBNがない場合のフォールバック（書籍名のピュア検索）
+          if (!title) return `https://www.amazon.co.jp/s?k=本&tag=${AMAZON_ASSOCIATE_ID}`;
+          const cleanTitle = String(title).replace(/『|』/g, '').trim();
+          return `https://www.amazon.co.jp/s?k=${encodeURIComponent(cleanTitle)}&tag=${AMAZON_ASSOCIATE_ID}`;
+        };
 
-            // ランダムなデータベースのテキストを取得
-            const randomData = yarukashiDB[Math.floor(Math.random() * yarukashiDB.length)];
+        const generateRecommendKeywords = (title) => {
+          if (!title) return "便利+しおり";
+          if (title.includes("現代") || title.includes("未来") || title.includes("技術") || title.includes("仕事")) return "ブルーライトカット+メガネ";
+          if (title.includes("小説") || title.includes("物語") || title.includes("文庫")) return "本革+ブックカバー+文庫";
+          return "便利+しおり+マグネット";
+        };
+
+        // 本棚リスト描画
+        const renderShelfList = () => {
+          const listContainer = document.getElementById('bookList');
+          const headerText = document.getElementById('shelfSummaryHeader');
+          if (!listContainer) return;
+          
+          let targetBooks = [];
+          if (state.shelfMode === 'month') {
+            targetBooks = (state.books || []).filter(b => b.month === state.currentMonth);
+            if (headerText) headerText.textContent = "今月の本棚";
+            const switcher = document.getElementById('shelfMonthSwitcher');
+            if (switcher) switcher.style.display = 'flex';
+          } else {
+            targetBooks = [...(state.books || [])];
+            if (headerText) headerText.textContent = "全履歴ストック";
+            const switcher = document.getElementById('shelfMonthSwitcher');
+            if (switcher) switcher.style.display = 'none';
+          }
+
+          if (state.shelfFilterStatus !== 'all') targetBooks = targetBooks.filter(b => b.status === state.shelfFilterStatus);
+          if (state.shelfSearchQuery.trim() !== '') {
+            const query = state.shelfSearchQuery.toLowerCase().trim();
+            targetBooks = targetBooks.filter(b => (b.title && b.title.toLowerCase().includes(query)) || (b.author && b.author.toLowerCase().includes(query)));
+          }
+
+          targetBooks.sort((a, b) => {
+            if (state.shelfSortKey === 'date_desc') {
+              const dateA = a.borrowDate || '1970-01-01'; const dateB = b.borrowDate || '1970-01-01';
+              if (dateA !== dateB) return dateB.localeCompare(dateA); return b.id.localeCompare(a.id);
+            } else if (state.shelfSortKey === 'date_asc') {
+              const dateA = a.borrowDate || '1970-01-01'; const dateB = b.borrowDate || '1970-01-01';
+              if (dateA !== dateB) return dateA.localeCompare(dateB); return a.id.localeCompare(b.id);
+            } else if (state.shelfSortKey === 'price_desc') {
+              return b.price - a.price;
+            } else if (state.shelfSortKey === 'due_asc') {
+              const dueA = a.dueDate || '9999-12-31'; const dueB = b.dueDate || '9999-12-31';
+              return dueA.localeCompare(dueB);
+            }
+            return 0;
+          });
+
+          const shelfSum = document.getElementById('shelfSummary');
+          if (shelfSum) shelfSum.textContent = `${targetBooks.length}冊`;
+          if (targetBooks.length === 0) {
+            listContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px 0; font-size: 0.85rem;">本が見つかりません。</p>';
+            return;
+          }
+
+          listContainer.innerHTML = targetBooks.map(book => {
+            const isRead = book.status === 'read';
+            const badge = book.dueDate ? getDueBadge(book.dueDate) : '';
+            const dueDateText = book.dueDate ? `期限: ${book.dueDate.replace(/-/g, '/')}` : '期限: なし';
+            const borrowDateText = book.borrowDate ? `${book.borrowDate.replace(/-/g, '/')}` : '';
+
+            let coverHtml = `<div class="book-cover-wrapper"><span class="book-cover-placeholder">📚</span></div>`;
+            if (book.coverUrl) coverHtml = `<div class="book-cover-wrapper"><img class="book-cover-img" src="${book.coverUrl}" alt="表紙" onerror="this.parentElement.innerHTML='<span class=\'book-cover-placeholder\'>📚</span>'"></div>`;
+
+            const recommendGoodsKeyword = generateRecommendKeywords(book.title);
+            const goodsUrl = `https://www.amazon.co.jp/s?k=${recommendGoodsKeyword}&tag=${AMAZON_ASSOCIATE_ID}`;
             
-            // スプレッドシートの「ジャンル」と「人物名」を組み合わせて見出しを作成
-            dbCategory.textContent = `【 ${randomData['ジャンル']}：${randomData['人物名']} 】`;
-            dbStory.textContent = randomData.text;
+            return `
+              <div class="book-card ${isRead ? 'is-read-mode' : ''}" data-id="${book.id}">
+                <div class="book-main-row">
+                  ${coverHtml}
+                  <div class="book-info">
+                    <span class="book-title">${escapeHTML(book.title)}</span>
+                    <div class="book-meta">
+                      <span>¥${book.price.toLocaleString()}</span>
+                      ${book.author ? `<span>${escapeHTML(book.author)}</span>` : ''}
+                      <span>登録: ${borrowDateText}</span> <span>${dueDateText}</span> ${badge}
+                    </div>
+                  </div>
+                  <div class="book-actions">
+                    <button class="status-button ${isRead ? 'is-read' : ''}" onclick="toggleBookStatus('${book.id}')">${isRead ? '読了' : '未読'}</button>
+                    <button class="delete-button" onclick="deleteBook('${book.id}')">🗑️</button>
+                  </div>
+                </div>
+                <div class="book-monetize-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span class="monetize-text">この本を手元にコレクションする：</span>
+                    <a href="${generateAmazonUrl(book.title, book.isbn)}" target="_blank" rel="noopener noreferrer" class="amazon-btn" onclick="trackAffiliateClick('amazon_book_detail', '${escapeJS(book.title)}')">🛒 Amazonで購入</a>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 1px dotted var(--border-color); padding-top: 6px; margin-top: 2px;">
+                    <span class="monetize-text" style="color: var(--accent); font-size: 0.65rem;">💡 おすすめ読書快適グッズ：</span>
+                    <a href="${goodsUrl}" target="_blank" rel="noopener noreferrer" class="amazon-btn" style="background-color: #2d6a4f; color: #fff; border-color: #1b4332; font-size: 0.7rem; padding: 4px 8px;" onclick="trackAffiliateClick('context_recommend_goods', '${escapeJS(book.title)}')">グッズを見る</a>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        };
 
-            // 現在のレコードとして保持
-            currentRecord = { userText: text, dbData: randomData };
+        const renderDueList = () => {
+          const dueContainer = document.getElementById('dueList');
+          if (!dueContainer) return;
+          
+          const dueBooks = (state.books || []).filter(b => b.status === 'borrowed' && b.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 3);
+          dueContainer.innerHTML = dueBooks.length === 0 
+            ? '<p style="font-size: 0.8rem; color: var(--text-secondary); padding: 12px 0;">すべて読了したか、期限のある本はありません。</p>'
+            : dueBooks.map(book => {
+              let coverHtml = `<div class="book-cover-wrapper" style="width: 36px; height: 50px;"><span class="book-cover-placeholder" style="font-size: 0.9rem;">📚</span></div>`;
+              if (book.coverUrl) coverHtml = `<div class="book-cover-wrapper" style="width: 36px; height: 50px;"><img class="book-cover-img" src="${book.coverUrl}" alt="表紙" onerror="this.parentElement.innerHTML='<span class=\'book-cover-placeholder\' style=\'font-size: 0.9rem;\'>📚</span>'"></div>`;
+              return `
+                <div class="book-card" style="padding: 10px 14px;">
+                  <div class="book-main-row">
+                    ${coverHtml}
+                    <div class="book-info">
+                      <span class="book-title" style="font-size: 0.85rem;">${escapeHTML(book.title)}</span>
+                      <div class="book-meta"><span>期限: ${book.dueDate.replace(/-/g, '/')}</span> ${getDueBadge(book.dueDate)}</div>
+                    </div>
+                    <button class="status-button" onclick="toggleBookStatus('${book.id}')">読了</button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+        };
 
-            // 画面の切り替え処理 (フェードアウト -> テーマ変更 -> フェードイン)
-            inputSection.classList.add('opacity-0');
+        const getDueBadge = (dueDateStr) => {
+          if (!dueDateStr) return '';
+          const today = new Date(); today.setHours(0,0,0,0);
+          const dueDate = new Date(dueDateStr); dueDate.setHours(0,0,0,0);
+          const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) return `<span class="badge-urgent">期限超過</span>`;
+          if (diffDays <= 3) return `<span class="badge-urgent">あと${diffDays}日</span>`;
+          return '';
+        };
+
+        const escapeHTML = (str) => { if (!str) return ''; return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); };
+        const escapeJS = (str) => { if (!str) return ''; return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"'); };
+
+        // 状態変更
+        window.toggleBookStatus = (id) => {
+          state.books = state.books.map(b => {
+            if (b.id === id) {
+              const nextStatus = b.status === 'read' ? 'borrowed' : 'read';
+              if (nextStatus === 'read') {
+                showToast(`「${b.title}」を読了！回収額に加算されました。`);
+                logAppEvent('book_complete', { 'book_title': b.title, 'book_price': b.price });
+              }
+              return { ...b, status: nextStatus };
+            }
+            return b;
+          });
+          saveToStorage(); renderAll();
+        };
+
+        window.deleteBook = (id) => {
+          const target = state.books.find(b => b.id === id);
+          if (target) {
+            logAppEvent('book_delete', { 'book_title': target.title, 'book_price': target.price });
+            state.books = state.books.filter(b => b.id !== id);
+            saveToStorage(); renderAll(); showToast('本棚から本を削除しました。');
+          }
+        };
+
+        window.trackAffiliateClick = (targetName, detailLabel = '') => { trackAppEvent(targetName, detailLabel); };
+        function trackAppEvent(targetName, detailLabel = '') { logAppEvent('affiliate_click', { 'click_target': targetName, 'detail_label': detailLabel }); }
+
+        const bindStaticBannersAnalytics = () => {
+          const audLink = document.getElementById('audibleBannerLink');
+          const kinLink = document.getElementById('kindleBannerLink');
+          const rakLink = document.getElementById('rakutenBannerLink');
+          const folLink = document.getElementById('xFollowLink');
+
+          if (audLink) audLink.addEventListener('click', () => { trackAffiliateClick('audible_pr', 'Audibleバナー常設'); });
+          if (kinLink) kinLink.addEventListener('click', () => { trackAffiliateClick('kindle_pr', 'Kindle Unlimitedバナー常設'); });
+          if (rakLink) rakLink.addEventListener('click', () => { trackAffiliateClick('rakuten_furusato', '楽天ふるさと納税固定バナー'); });
+          if (folLink) folLink.addEventListener('click', () => { logAppEvent('social_follow', { 'social_platform': 'X_Twitter_Official' }); });
+        };
+
+        // バーコードスキャナー制御
+        const startBarcodeScanner = () => {
+          const scannerModal = document.getElementById('scannerModal'); const scannerStatus = document.getElementById('scannerStatus');
+          if (!scannerModal || !scannerStatus) return;
+
+          scannerModal.style.display = 'flex'; scannerStatus.textContent = "カメラへのアクセスを待機しています...";
+          html5QrcodeScanner = new Html5Qrcode("interactive-scanner");
+          const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+            scannerStatus.textContent = `検出成功: ${decodedText}！書籍情報を取得中...`; stopBarcodeScanner();
+            const isbnInput = document.getElementById('isbnInput');
+            const searchBtn = document.getElementById('isbnSearchBtn');
+            if (isbnInput) isbnInput.value = decodedText; 
+            if (searchBtn) searchBtn.click();
+          };
+          const config = { fps: 10, qrbox: { width: 260, height: 130 }, aspectRatio: 1.33 };
+          html5QrcodeScanner.start({ facingMode: "environment" }, config, qrCodeSuccessCallback, (errorMessage) => {}).then(() => {
+            scannerStatus.textContent = "本の『上側のバーコード（ISBN）』を中央にかざしてください。";
+          }).catch(err => {
+            scannerStatus.textContent = "カメラ起動エラー: カメラの使用を許可してください。";
+          });
+        };
+
+        const stopBarcodeScanner = () => {
+          const scannerModal = document.getElementById('scannerModal'); 
+          if (scannerModal) scannerModal.style.display = 'none';
+          if (html5QrcodeScanner) { html5QrcodeScanner.stop().then(() => { html5QrcodeScanner.clear(); html5QrcodeScanner = null; }).catch(err => {}); }
+        };
+
+        const startScanBtn = document.getElementById('startScannerBtn');
+        const stopScanBtn = document.getElementById('stopScannerBtn');
+        if (startScanBtn) startScanBtn.addEventListener('click', () => { startBarcodeScanner(); logAppEvent('scanner_open', { 'trigger': 'register_scan_btn' }); });
+        if (stopScanBtn) stopScanBtn.addEventListener('click', () => { stopBarcodeScanner(); });
+
+        // タブ切り替え処理
+        document.querySelectorAll('.tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            const targetTabName = tab.dataset.tab;
+            document.querySelectorAll('.tab, .view').forEach(el => el.classList.remove('is-active'));
+            tab.classList.add('is-active');
+            const targetView = document.getElementById(`view-${targetTabName}`);
+            if (targetView) targetView.classList.add('is-active');
             
-            setTimeout(() => {
-                inputSection.classList.add('hidden');
-                
-                // テーマを「朝焼け」に変更
-                appBody.classList.remove('theme-dark');
-                appBody.classList.add('theme-sunrise');
-                
-                resultSection.classList.remove('hidden');
-                // 少し待ってから表示エリアのopacityを上げる
-                setTimeout(() => {
-                    resultSection.classList.remove('opacity-0');
-                }, 50);
-            }, 1000); // inputSectionのopacity遷移時間と合わせる
-            
-            // スクロールを一番上に戻す
-            setTimeout(() => { window.scrollTo(0, 0); }, 100);
+            if (targetTabName === 'scan') setDefaultDueDate();
+            logAppEvent('screen_view', { 'screen_name': targetTabName });
+          });
         });
 
-        // 「もう一度、暗闇に戻る」ボタンクリック
-        resetBtn.addEventListener('click', () => {
-            // 履歴に保存
-            if(currentRecord) {
-                saveToHistory(currentRecord);
-                currentRecord = null;
-            }
+        // 月送りの操作
+        const changeMonth = (offset) => {
+          const [year, month] = state.currentMonth.split('-').map(Number);
+          const date = new Date(year, month - 1 + offset, 1);
+          state.currentMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          renderAll(); renderStampCalendars();
+          logAppEvent('change_month_view', { 'target_month': state.currentMonth });
+        };
 
-            // UIをリセットして最初の画面に戻す
-            resultSection.classList.add('opacity-0');
+        document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
+        document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
+        document.getElementById('shelfPrevMonth').addEventListener('click', () => changeMonth(-1));
+        document.getElementById('shelfNextMonth').addEventListener('click', () => changeMonth(1));
 
-            setTimeout(() => {
-                resultSection.classList.add('hidden');
-                
-                // テーマを「暗闇」に戻す
-                appBody.classList.remove('theme-sunrise');
-                appBody.classList.add('theme-dark');
-                
-                userInput.value = ''; // 入力をクリア
-                
-                inputSection.classList.remove('hidden');
-                setTimeout(() => {
-                    inputSection.classList.remove('opacity-0');
-                }, 50);
-            }, 1000);
-            
-            setTimeout(() => { window.scrollTo(0, 0); }, 100);
+        // 本棚モードの切り替え
+        document.getElementById('btnShelfMonth').addEventListener('click', (e) => {
+          state.shelfMode = 'month'; document.getElementById('btnShelfMonth').classList.add('is-active'); document.getElementById('btnShelfAll').classList.remove('is-active'); renderShelfList();
+        });
+        document.getElementById('btnShelfAll').addEventListener('click', (e) => {
+          state.shelfMode = 'all'; document.getElementById('btnShelfAll').classList.add('is-active'); document.getElementById('btnShelfMonth').classList.remove('is-active'); renderShelfList();
         });
 
-        // アプリケーション初期化
-        loadDatabase();
-        loadHistory();
+        const shelfSearchInput = document.getElementById('shelfSearch');
+        const shelfSortSelect = document.getElementById('shelfSort');
+        if (shelfSearchInput) shelfSearchInput.addEventListener('input', (e) => { state.shelfSearchQuery = e.target.value; renderShelfList(); });
+        if (shelfSortSelect) shelfSortSelect.addEventListener('change', (e) => { state.shelfSortKey = e.target.value; renderShelfList(); });
+        
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('is-active'));
+            btn.classList.add('is-active'); state.shelfFilterStatus = btn.dataset.status; renderShelfList();
+          });
+        });
+
+        const tToggle = document.getElementById('themeToggle');
+        if (tToggle) {
+          tToggle.addEventListener('click', () => {
+            state.theme = state.theme === 'light' ? 'dark' : 'light'; document.body.setAttribute('data-theme', state.theme); saveToStorage();
+          });
+        }
+
+        const updateStyleButtons = () => { document.querySelectorAll('.style-card').forEach(card => { card.classList.toggle('is-selected', card.dataset.style === state.settings.style); }); };
+        document.querySelectorAll('.style-card').forEach(card => {
+          card.addEventListener('click', () => {
+            state.settings.style = card.dataset.style; document.body.setAttribute('data-style', state.settings.style); updateStyleButtons(); saveToStorage(); showToast(`スタイルを切り替えました。`);
+          });
+        });
+
+        // ISBN 検索
+        const isbnSearchBtn = document.getElementById('isbnSearchBtn');
+        if (isbnSearchBtn) {
+          document.getElementById('isbnForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); const isbn = document.getElementById('isbnInput').value.trim().replace(/-/g, '');
+            if (!isbn) return showToast('ISBNコードを入力してください。');
+            isbnSearchBtn.disabled = true; isbnSearchBtn.textContent = '検索中...';
+            try {
+              const response = await fetch(`https://api.openbd.jp/v1/get?isbn=${isbn}`); const data = await response.json();
+              if (data && data[0]) {
+                const info = data[0].summary; document.getElementById('titleInput').value = info.title || ''; document.getElementById('authorInput').value = info.author || '';
+                let price = 0; const opds = data[0].onix;
+                if (opds?.ProductSupply?.SupplyDetail?.Price?.[0]) price = parseInt(opds.ProductSupply.SupplyDetail.Price[0].PriceAmount) || 0;
+                document.getElementById('priceInput').value = price || ''; document.getElementById('hiddenIsbn').value = info.isbn || '';
+                document.getElementById('hiddenCoverUrl').value = info.cover || '';
+                document.getElementById('lookupSource').textContent = `「${info.title}」を読み込みました`;
+                setDefaultDueDate(); showToast('書籍情報を取得しました！');
+              } else { showToast('書籍情報が見つかりませんでした。'); }
+            } catch (err) { showToast('検索中にエラーが発生しました。'); } finally { isbnSearchBtn.disabled = false; isbnSearchBtn.textContent = 'ISBNで検索'; }
+          });
+        }
+
+        // 新規本登録
+        document.getElementById('bookForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const borrowDate = document.getElementById('borrowDateInput').value; const [yyyy, mm] = borrowDate.split('-');
+          const title = document.getElementById('titleInput').value.trim(); const price = parseInt(document.getElementById('priceInput').value) || 0;
+          const isbn = document.getElementById('hiddenIsbn').value;
+
+          state.books.push({
+            id: 'book_' + Date.now(), title: title, price: price, author: document.getElementById('authorInput').value.trim(),
+            dueDate: document.getElementById('dueInput').value, borrowDate: borrowDate, isbn: isbn, coverUrl: document.getElementById('hiddenCoverUrl').value,
+            status: 'borrowed', month: `${yyyy}-${mm}`
+          });
+
+          saveToStorage(); renderAll(); renderStampCalendars();
+          e.target.reset(); document.getElementById('isbnForm').reset();
+          document.getElementById('lookupSource').textContent = '手入力でも登録できます';
+          document.getElementById('hiddenIsbn').value = ''; document.getElementById('hiddenCoverUrl').value = '';
+          setDefaultDueDate(); showToast('本を登録しました！');
+          document.querySelector('.tab[data-tab="dashboard"]').click();
+        });
+
+        // 設定保存
+        document.getElementById('settingsForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          state.settings.monthlyTax = parseInt(document.getElementById('taxInput').value) || 0;
+          state.settings.loanDays = parseInt(document.getElementById('loanDaysInput').value) || 14;
+          state.settings.preAddTax = parseInt(document.getElementById('preAddTaxInput').value) || 0;
+          saveToStorage(); renderAll(); setDefaultDueDate(); showToast('設定を保存しました。');
+          document.querySelector('.tab[data-tab="dashboard"]').click();
+        });
+
+        const closeAdBtn = document.getElementById('closeAdBtn');
+        if (closeAdBtn) {
+          closeAdBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); document.getElementById('bottomPromoBanner').style.display = 'none';
+            document.querySelector('.app-shell').style.paddingBottom = '90px';
+          });
+        }
+
+        // LINE・AirDrop・シェア用ユニバーサル招待共有機能
+        const inviteBtn = document.getElementById('appInviteBtn');
+        if (inviteBtn) {
+          inviteBtn.addEventListener('click', async () => {
+            const inviteData = {
+              title: '税金回収カウンター',
+              text: '国に取られる住民税、図書館の読書で「全額回収」ゲームを始めよう！読んだ本の総額が税金を削っていく超楽しいメーターアプリ。登録不要で今すぐ使えます！',
+              url: window.location.href
+            };
+
+            if (navigator.share) {
+              try {
+                await navigator.share(inviteData);
+                logAppEvent('app_invite_share', { 'method': 'native_web_share' });
+              } catch (err) {
+                console.log('Share canceled or failed:', err);
+              }
+            } else {
+              try {
+                await navigator.clipboard.writeText(window.location.href);
+                showToast('アプリのURLをコピーしました！LINEやSNSに貼り付けて招待してください。');
+                logAppEvent('app_invite_share', { 'method': 'clipboard_fallback' });
+              } catch (err) {
+                const textArea = document.createElement("textarea");
+                textArea.value = window.location.href; document.body.appendChild(textArea);
+                textArea.select(); document.execCommand("copy"); document.body.removeChild(textArea);
+                showToast('アプリのURLをコピーしました！');
+              }
+            }
+          });
+        }
+
+        // 𝕏 シェア
+        document.getElementById('xShareBtn').addEventListener('click', () => {
+          const b = (state.books || []).filter(b => b.month === state.currentMonth && b.status === 'read');
+          const sum = b.reduce((s, b) => s + b.price, 0);
+          const rate = state.settings.monthlyTax > 0 ? Math.min(Math.round((sum / state.settings.monthlyTax) * 100), 100) : 0;
+          const text = `【税金回収カウンター】\n今月の住民税を ${rate}%（${sum.toLocaleString()}円分）回収しました！\n図書館で読んだ本を記録して、賢く住民税を取り戻そう！\n\nby @zeikinzero #税金回収カウンター #読書\n`;
+          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
+          logAppEvent('sns_share', { 'platform_target': 'X_Twitter', 'recovered_rate': rate });
+        });
+
+        // Threads シェア
+        document.getElementById('threadsShareBtn').addEventListener('click', () => {
+          const b = (state.books || []).filter(b => b.month === state.currentMonth && b.status === 'read');
+          const sum = b.reduce((s, b) => s + b.price, 0);
+          const rate = state.settings.monthlyTax > 0 ? Math.min(Math.round((sum / state.settings.monthlyTax) * 100), 100) : 0;
+          const text = `【税金回収カウンター】\n今月の住民税を ${rate}%（${sum.toLocaleString()}円分）回収しました！\n図書館で読んだ本を記録して、賢く住民税を取り戻そう！\n${window.location.href}`;
+          window.open(`https://www.threads.net/intent/post?text=${encodeURIComponent(text)}`, '_blank');
+        });
+
+        // Instagram用コピー
+        document.getElementById('instaCopyBtn').addEventListener('click', async () => {
+          const b = (state.books || []).filter(b => b.month === state.currentMonth && b.status === 'read');
+          const sum = b.reduce((s, b) => s + b.price, 0);
+          const rate = state.settings.monthlyTax > 0 ? Math.min(Math.round((sum / state.settings.monthlyTax) * 100), 100) : 0;
+          const text = `今月の住民税を ${rate}%（${sum.toLocaleString()}円）回収📚\n「税金回収カウンター」で検索！\n${window.location.href}`;
+          try {
+            await navigator.clipboard.writeText(text); showToast('紹介文をコピーしました！ストーリー等に貼り付けてください');
+          } catch (err) {
+            const textArea = document.createElement("textarea"); textArea.value = text; document.body.appendChild(textArea); textArea.select(); document.execCommand("copy"); document.body.removeChild(textArea); showToast('紹介文をコピーしました！');
+          }
+        });
+
+        init();
+      });
     </script>
-</body>
+  </body>
 </html>
