@@ -7,7 +7,7 @@
     <title>税金回収カウンター</title>
 
     <!-- ==========================================
-      【外部ライブラリ】html5-qrcode (カメラバーコードスキャナー)
+      【外部ライブラリ】html5-qrcode (バーコードデコーダー)
     ========================================== -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
@@ -341,7 +341,7 @@
         border: 1px solid #a88734;
       }
 
-      /* 【超重要】ビュー強制制御スタイル */
+      /* ビュー強制制御スタイル */
       .view {
         display: none !important;
         animation: fadeIn 0.3s ease;
@@ -1115,56 +1115,42 @@
         color: var(--text-secondary);
       }
 
-      /* カメラスキャンモーダル */
-      .scanner-modal {
-        position: fixed;
-        top: 0; left: 0; width: 100vw; height: 100vh;
-        background-color: rgba(0,0,0,0.85);
-        z-index: 1000;
-        display: none;
+      /* ファイルアップロードスキャン用エリアのスタイリング */
+      .scanner-file-area {
+        border-top: 1px dashed var(--border-color);
+        padding: 14px;
+        background-color: var(--bg-card);
+        display: flex;
         flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+      }
+      .scanner-file-label {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: white;
+        cursor: pointer;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 16px;
-      }
-      .scanner-container {
-        width: 100%;
-        max-width: 400px;
-        background-color: var(--bg-card);
-        border-radius: var(--radius);
-        overflow: hidden;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        display: flex;
-        flex-direction: column;
-        position: relative;
-      }
-      .scanner-header {
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-weight: bold;
-        background-color: var(--bg-app);
-      }
-      .scanner-close-btn {
-        background: none;
+        gap: 8px;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+        padding: 12px 24px;
+        border-radius: 99px;
+        transition: var(--transition);
         border: none;
-        font-size: 1.2rem;
-        cursor: pointer;
-        color: var(--text-secondary);
-      }
-      #interactive-scanner {
         width: 100%;
-        min-height: 280px;
-        background-color: #000;
-      }
-      .scanner-status {
-        padding: 12px;
-        font-size: 0.75rem;
+        max-width: 280px;
+        box-shadow: 0 4px 10px rgba(45, 106, 79, 0.2);
         text-align: center;
-        color: var(--text-secondary);
-        background-color: var(--bg-app);
+      }
+      .scanner-file-label:hover {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+      }
+      #scannerFileInput {
+        display: none;
       }
 
       /* おすすめ読書枠（PR） */
@@ -1237,49 +1223,7 @@
         line-height: 1.3;
       }
 
-      /* 楽天アンカーバナー */
-      .promo-anchor-banner {
-        position: fixed;
-        bottom: 70px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        max-width: 480px;
-        background-color: var(--bg-card);
-        border-top: 1px solid var(--border-color);
-        border-bottom: 1px solid var(--border-color);
-        height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 99;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
-      }
-
-      .promo-banner-content {
-        font-size: 0.7rem;
-        color: var(--text-secondary);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        line-height: 1.3;
-        text-align: center;
-      }
-
-      .promo-close-btn {
-        position: absolute;
-        right: 8px;
-        top: 4px;
-        background: none;
-        border: none;
-        font-size: 0.8rem;
-        color: var(--text-secondary);
-        cursor: pointer;
-        padding: 4px;
-      }
-
-      /* 毎日開かせるためのリマインダー通知 */
+      /* 期限リマインダー通知 */
       .push-popup-banner {
         background-color: #2c2520;
         color: #ffffff;
@@ -1409,7 +1353,7 @@
       <!-- ビュー: ダッシュボード（今月） -->
       <section class="view is-active" id="view-dashboard" aria-labelledby="dashboardTitle">
         
-        <!-- 【改善要件①】直近7日間の週間スタンプバー -->
+        <!-- 週間スタンプバー -->
         <div class="omikuji-card" id="omikujiCard">
           <div class="omikuji-title">
             <span>📅 今週の読書スタンプ</span>
@@ -1432,7 +1376,7 @@
                 <a href="#" id="recommendAmazonBtn" target="_blank" rel="noopener noreferrer" class="amazon-btn" style="margin-top: 6px; padding: 4px 8px; font-size: 0.65rem;">🛒 Amazon詳細へ</a>
               </div>
             </div>
-            <!-- 【要望変更】スタンプをまだ押していない状態のプレースホルダー案内文 -->
+            <!-- スタンプをまだ押していない状態のプレースホルダー案内文 -->
             <div class="omikuji-desc" id="omikujiDesc">スタンプを押すと今日のおすすめの一冊が表示されます♫</div>
           </div>
 
@@ -1537,7 +1481,7 @@
           <button class="app-invite-button" id="appInviteBtn" type="button">🔗 このアプリを友達に教える</button>
         </div>
 
-        <!-- 1ヶ月フル表示の「月間スタンプ履歴カレンダー」を画面の最下部に移動 -->
+        <!-- 1ヶ月フル表示の「月間スタンプ履歴カレンダー」 -->
         <div class="omikuji-card" style="margin-top: 32px; margin-bottom: 0;" id="monthlyCalendarBlock">
           <div class="stamp-calendar-container">
             <div class="stamp-calendar-header">
@@ -1553,16 +1497,19 @@
       <section class="view" id="view-scan" aria-labelledby="scanTitle">
         <div class="section-heading">
           <h2 id="scanTitle">登録</h2>
-          <span>秒速カメラ読み取り、または手入力</span>
+          <span>秒速写真読み取り、または手入力</span>
         </div>
 
-        <div class="scanner-trigger-box" id="startScannerBtn">
+        <!-- 【超改善】カメラスキャンの代わりにスマホ標準の撮影/アップロードを起動する一本化トリガー -->
+        <label for="scannerFileInput" class="scanner-trigger-box" id="fileUploadTriggerLabel" style="display: flex; cursor: pointer;">
           <span class="scanner-icon">📸</span>
-          <span class="scanner-title">本のバーコード（ISBN）をスキャン</span>
-          <span class="scanner-subtitle">カメラをかざすだけで書籍情報を一瞬で読み込みます</span>
-        </div>
+          <span class="scanner-title">本のバーコード（裏表紙）を撮影</span>
+          <span class="scanner-subtitle">その場で写真を撮るか、アルバムから選んで自動登録♫</span>
+          <!-- スマホ撮影を優先トリガーするネイティブinput -->
+          <input type="file" id="scannerFileInput" accept="image/*" capture="environment" style="display: none;" />
+        </label>
 
-        <form class="isbn-form" id="isbnForm">
+        <form class="isbn-form" id="isbnForm" style="margin-top: 16px;">
           <label>
             ISBNを手動で入力
             <input id="isbnInput" inputmode="numeric" autocomplete="off" placeholder="例: 9784046051158" />
@@ -1768,6 +1715,9 @@
       <button class="tab" data-tab="settings" type="button"><span>設定</span></button>
     </nav>
 
+    <!-- トースト通知 -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
     <script>
       // ご指定のAmazonアソシエイトStore ID
       const AMAZON_ASSOCIATE_ID = "kojikojiy07-22";
@@ -1796,7 +1746,7 @@
 
         // --- セレンディピティ枠 ---
         const serendipityFortunes = [
-          { name: "放浪・読書日和 🗺️", author: "開発者セレクト", desc: "今日はあえて本を読まずに、お気に入りの本屋や図書館をあてなく散歩してみる日。全く興味のなかった棚の前で3秒立ち止まると、人生を変えるセレンディピティ（本）に出会えます！" },
+          { name: "放浪・読書日和 🗺️", author: "開発者セレクト", desc: "今日はあえて本を読まずに、お気に入りの本屋や図書館をあてなく散歩してみる day。全く興味のなかった棚の前で3秒立ち止まると、人生を変えるセレンディピティ（本）に出会えます！" },
           { name: "余白・デトックス ☕", author: "開発者セレクト", desc: "今日はあえてスマホの通知をオフにして、紙の書籍の『インクの香り』と『手触り』を五感で楽しむ日。喫茶店でただ 1 冊の本と向き合う、贅沢な住民税回収タイムをどうぞ。" },
           { name: "ジャケ買いの予感 🎨", author: "開発者セレクト", desc: "今日は、タイトルや著者ではなく『本の表紙デザイン（ジャケ絵）』だけで惹かれる1冊を直感で選んでみましょう。直感は、あなたの脳が今一番必要としている知識を知っています。" },
           { name: "名著・再読のススメ 🔄", author: "開発者セレクト", desc: "新しい本を探すのも良いですが、数年前に読んで感動した本、あるいは本棚の隅で眠っているお気に入りをもう一度開いてみましょう。自分が成長した分、全く違う新しい発見が必ずあります。" },
@@ -1965,13 +1915,12 @@
             document.getElementById('omikujiBtn').style.display = 'inline-block';
             document.getElementById('omikujiResultBox').style.display = 'none';
             
-            // 【要望】まだ本日のスタンプを押していない時のプレースホルダー設定
             const descEl = document.getElementById('omikujiDesc');
             if (descEl) descEl.textContent = "スタンプを押すと今日のおすすめの一冊が表示されます♫";
           }
         };
 
-        // おすすめ本表示エリア（UI）の描画（個別商品詳細ページ直リンク対応）
+        // おすすめ本表示エリア（UI）の描画
         const updateRecommendBookUI = (log) => {
           if (!log || typeof log !== 'object') return;
 
@@ -1987,7 +1936,6 @@
           if (authorEl) authorEl.textContent = log.author || '開発者セレクト';
           if (descEl) descEl.textContent = log.desc || '';
 
-          // ASIN変換対応の安全なAmazon詳細URLの構築
           const amazonUrl = generateAmazonUrl(bookTitle, log.isbn);
           if (amazonBtn) {
             amazonBtn.href = amazonUrl;
@@ -2198,16 +2146,13 @@
           renderDueList();
         };
 
-        // 【大拡張】13桁ISBNコードを10桁ISBN（ASIN）へ変換する超高精度ロジック
+        // 13桁ISBNコードを10桁ISBN（ASIN）へ変換する超高精度ロジック
         const convertIsbn13To10 = (isbn13) => {
           if (!isbn13 || typeof isbn13 !== 'string') return null;
           const cleanIsbn = isbn13.replace(/-/g, '').trim();
           if (cleanIsbn.length !== 13 || !cleanIsbn.startsWith('978')) return null;
 
-          // 978から始まる13桁のうち、頭の3桁(978)と最後のチェックディジット(1桁)を除いた、真ん中の9桁を取得
           const base9 = cleanIsbn.substring(3, 12);
-          
-          // 10桁チェックディジットの算出
           let sum = 0;
           for (let i = 0; i < 9; i++) {
             sum += parseInt(base9.charAt(i)) * (10 - i);
@@ -2227,9 +2172,8 @@
           return base9 + checkDigit;
         };
 
-        // 【劇的改善】検索結果を回避し、書籍の「商品個別販売ページ」に直接ピンポイント遷移させるリンク生成ロジック
+        // Amazonへの個別詳細直リンク生成
         const generateAmazonUrl = (title, isbn) => {
-          // ISBNコードが存在する場合、10桁のASINに自動変換して商品個別詳細ページに直接ジャンプ
           if (isbn && typeof isbn === 'string') {
             const cleanIsbn = isbn.replace(/-/g, '').trim();
             let asin = null;
@@ -2241,12 +2185,10 @@
             }
 
             if (asin) {
-              // 楽天・Amazonの検索画面をすり抜けて、具体的な商品（書籍）ページに直接飛びます
               return `https://www.amazon.co.jp/dp/${asin}?tag=${AMAZON_ASSOCIATE_ID}`;
             }
           }
 
-          // ISBNがない場合のフォールバック（書籍名のピュア検索）
           if (!title) return `https://www.amazon.co.jp/s?k=本&tag=${AMAZON_ASSOCIATE_ID}`;
           const cleanTitle = String(title).replace(/『|』/g, '').trim();
           return `https://www.amazon.co.jp/s?k=${encodeURIComponent(cleanTitle)}&tag=${AMAZON_ASSOCIATE_ID}`;
@@ -2420,47 +2362,44 @@
         const bindStaticBannersAnalytics = () => {
           const audLink = document.getElementById('audibleBannerLink');
           const kinLink = document.getElementById('kindleBannerLink');
-          const rakLink = document.getElementById('rakutenBannerLink');
           const folLink = document.getElementById('xFollowLink');
 
           if (audLink) audLink.addEventListener('click', () => { trackAffiliateClick('audible_pr', 'Audibleバナー常設'); });
           if (kinLink) kinLink.addEventListener('click', () => { trackAffiliateClick('kindle_pr', 'Kindle Unlimitedバナー常設'); });
-          if (rakLink) rakLink.addEventListener('click', () => { trackAffiliateClick('rakuten_furusato', '楽天ふるさと納税固定バナー'); });
           if (folLink) folLink.addEventListener('click', () => { logAppEvent('social_follow', { 'social_platform': 'X_Twitter_Official' }); });
         };
 
-        // バーコードスキャナー制御
-        const startBarcodeScanner = () => {
-          const scannerModal = document.getElementById('scannerModal'); const scannerStatus = document.getElementById('scannerStatus');
-          if (!scannerModal || !scannerStatus) return;
+        // 【新設・ファイル写真読み込み専用デコーダー】
+        const scannerFileInput = document.getElementById('scannerFileInput');
+        if (scannerFileInput) {
+          scannerFileInput.addEventListener('change', async (e) => {
+            if (e.target.files.length === 0) return;
+            const file = e.target.files[0];
+            showToast("📸 画像からバーコード（ISBN）を解析中...");
 
-          scannerModal.style.display = 'flex'; scannerStatus.textContent = "カメラへのアクセスを待機しています...";
-          html5QrcodeScanner = new Html5Qrcode("interactive-scanner");
-          const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-            scannerStatus.textContent = `検出成功: ${decodedText}！書籍情報を取得中...`; stopBarcodeScanner();
-            const isbnInput = document.getElementById('isbnInput');
-            const searchBtn = document.getElementById('isbnSearchBtn');
-            if (isbnInput) isbnInput.value = decodedText; 
-            if (searchBtn) searchBtn.click();
-          };
-          const config = { fps: 10, qrbox: { width: 260, height: 130 }, aspectRatio: 1.33 };
-          html5QrcodeScanner.start({ facingMode: "environment" }, config, qrCodeSuccessCallback, (errorMessage) => {}).then(() => {
-            scannerStatus.textContent = "本の『上側のバーコード（ISBN）』を中央にかざしてください。";
-          }).catch(err => {
-            scannerStatus.textContent = "カメラ起動エラー: カメラの使用を許可してください。";
+            // html5-qrcodeのファイルデコードインスタンスを一時生成
+            const fileScanner = new Html5Qrcode("interactive-scanner-dummy");
+            try {
+              const decodedText = await fileScanner.scanFile(file, true);
+              showToast("🎉 バーコード読み込みに成功しました！");
+              
+              // フォームに反映して自動検索
+              const isbnInput = document.getElementById('isbnInput');
+              const searchBtn = document.getElementById('isbnSearchBtn');
+              if (isbnInput) isbnInput.value = decodedText;
+              if (searchBtn) searchBtn.click();
+              
+              logAppEvent('barcode_file_scan_success', { 'isbn': decodedText });
+            } catch (err) {
+              console.error("Barcode Scan Error:", err);
+              showToast("⚠️ 解析に失敗しました。バーコードがハッキリ写るように明るい場所で再度撮影してください。");
+              logAppEvent('barcode_file_scan_failed', { 'error': err });
+            } finally {
+              // デバイスメモリのクリーンアップ
+              fileScanner.clear();
+            }
           });
-        };
-
-        const stopBarcodeScanner = () => {
-          const scannerModal = document.getElementById('scannerModal'); 
-          if (scannerModal) scannerModal.style.display = 'none';
-          if (html5QrcodeScanner) { html5QrcodeScanner.stop().then(() => { html5QrcodeScanner.clear(); html5QrcodeScanner = null; }).catch(err => {}); }
-        };
-
-        const startScanBtn = document.getElementById('startScannerBtn');
-        const stopScanBtn = document.getElementById('stopScannerBtn');
-        if (startScanBtn) startScanBtn.addEventListener('click', () => { startBarcodeScanner(); logAppEvent('scanner_open', { 'trigger': 'register_scan_btn' }); });
-        if (stopScanBtn) stopScanBtn.addEventListener('click', () => { stopBarcodeScanner(); });
+        }
 
         // タブ切り替え処理
         document.querySelectorAll('.tab').forEach(tab => {
@@ -2577,14 +2516,6 @@
           document.querySelector('.tab[data-tab="dashboard"]').click();
         });
 
-        const closeAdBtn = document.getElementById('closeAdBtn');
-        if (closeAdBtn) {
-          closeAdBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); document.getElementById('bottomPromoBanner').style.display = 'none';
-            document.querySelector('.app-shell').style.paddingBottom = '90px';
-          });
-        }
-
         // LINE・AirDrop・シェア用ユニバーサル招待共有機能
         const inviteBtn = document.getElementById('appInviteBtn');
         if (inviteBtn) {
@@ -2652,5 +2583,8 @@
         init();
       });
     </script>
+
+    <!-- html5-qrcode用のバックグラウンドファイル解析用不可視コンテナ -->
+    <div id="interactive-scanner-dummy" style="display: none; width: 0; height: 0;"></div>
   </body>
 </html>
